@@ -14,7 +14,7 @@ def load_standings_df():
 
     # 按你的实际列名修改这里：
     # 例如：season_en, team, position, played, won, drawn, lost, gf, ga, gd, points
-    df["season_en"] = df["season_en"].astype(int)
+    df["season_end_year"] = df["season_end_year"].astype(int)
     df["position"] = df["position"].astype(int)
     df["played"] = df["played"].astype(int)
     df["won"] = df["won"].astype(int)
@@ -36,13 +36,13 @@ def get_standings_df():
 
 def get_all_seasons():
     df = get_standings_df()
-    seasons = sorted(df["season_en"].unique().tolist())
+    seasons = sorted(df["season_end_year"].unique().tolist())
     return seasons
 
 
 def get_table_for_season(season: int, sort_type: str = "points"):
     df = get_standings_df()
-    season_df = df[df["season_en"] == season].copy()
+    season_df = df[df["season_end_year"] == season].copy()
 
     if season_df.empty:
         return []
