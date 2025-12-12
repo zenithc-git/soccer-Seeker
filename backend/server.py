@@ -29,14 +29,14 @@ def home():
     <p>可用接口：</p>
     <ul>
         <li><a href="/api/seasons">/api/seasons</a> 查看所有赛季</li>
-        <li><a href="/api/users">/api/users</a> 查看已注册用户列表</li>
         <li>
-            <button id="getUserInfoBtn" class="btn">/api/me (GET)</button> 
-            获取当前用户信息
+            <button id="getAllUsersBtn" class="btn">查看所有用户</button> 
         </li>
         <li>
-            <button id="deleteAccountBtn" class="btn">/api/users/me</button> 
-            删除当前用户账号
+            <button id="getUserInfoBtn" class="btn">获取当前用户信息</button> 
+        </li>
+        <li>
+            <button id="deleteAccountBtn" class="btn">删除当前用户账号</button> 
         </li>
         <li>/api/standings?season=xxxx 获取赛季积分榜</li>
     </ul>
@@ -65,6 +65,7 @@ def home():
         <div class="row"><input id="reg_email" placeholder="邮箱"></div>
         <div class="row"><input id="reg_password" placeholder="密码" type="password"></div>
         <div class="row"><input id="reg_birthday" placeholder="生日 (YYYY-MM-DD)"></div>
+        <div class="row"><input id="reg_role" placeholder="角色 (user/vip_user/admin) 默认user"></div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
           <button id="reg_cancel" class="btn secondary">取消</button>
           <button id="reg_submit" class="btn">提交</button>
@@ -100,9 +101,10 @@ def home():
         const email = document.getElementById('reg_email').value.trim()
         const password = document.getElementById('reg_password').value
         const birthday = document.getElementById('reg_birthday').value.trim()
+        const role = document.getElementById('reg_role').value.trim()
         if (!name || !email || !password){ alert('请填写用户名、邮箱和密码'); return }
         try{
-            const res = await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password,birthday})})
+            const res = await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password,birthday,role})})
             const data = await res.json()
             if (!res.ok){ alert('注册失败: '+(data.error||JSON.stringify(data))); return }
             alert('注册成功: '+JSON.stringify(data.user))
@@ -157,6 +159,30 @@ def home():
             // document.getElementById('userInfoDisplay').innerText = JSON.stringify(data, null, 2);
         } catch (e) {
             alert('网络请求错误: ' + e.message);
+        }
+    });
+
+    // 查看所有用户请求
+    document.getElementById('getAllUsersBtn').addEventListener('click', async function(){
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('请先登录');
+            return;
+        }
+        try {
+            const res = await fetch('/api/users', {
+                method: 'GET',
+                headers: { "Authorization": `Bearer ${token}` } // 必须带Token
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                alert('请求失败: ' + (data.error || '未知错误'));
+                return;
+            }
+            // 成功展示所有用户
+            alert('所有用户信息：' + JSON.stringify(data, null, 2));
+        } catch (e) {
+            alert('网络错误: ' + e.message);
         }
     });
 
@@ -233,6 +259,7 @@ def api_register():
     email = data.get("email")
     password = data.get("password")
     birthday = data.get("birthday")  # 格式：YYYY-MM-DD
+    role = data.get("role", "user")  # 默认角色为"user"
 
     if not (name and email and password):
         return jsonify({"error": "missing required fields (name,email,password)"}), 400
@@ -245,7 +272,7 @@ def api_register():
             return jsonify({"error": "email already registered"}), 409
 
         # create user
-        user = User(name=name, email=email, password=password)
+        user = User(name=name, email=email, password=password, role=role)
         if birthday:
             from datetime import datetime
             try:
@@ -273,6 +300,22 @@ def api_register():
 @app.route("/api/users", methods=["GET"])
 def api_users():
     """返回已注册用户列表（不包含密码）。可用查询参数：role（可选）"""
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        token = auth.split(None, 1)[1]
+    else:
+        token = None
+
+    if not token or token not in TOKENS:
+        return jsonify({"error": "missing or invalid token"}), 401
+
+    user_id = TOKENS[token]
+    session = SessionLocal()
+
+    user = session.query(User).get(user_id)
+    if not user or user.role != "admin":
+        return jsonify({"error": "admin access required"}), 403
+
     role = request.args.get("role")
     session = SessionLocal()
     try:
@@ -342,37 +385,6 @@ def api_me():
         return jsonify({"id": user.id, "name": user.name, "email": user.email, "role": user.role})
     finally:
         session.close()
-
-
-@app.route("/api/users/<int:user_id>", methods=["DELETE"])
-def api_delete_user(user_id: int):
-    """删除指定用户（仅管理员可执行）。需要 Authorization: Bearer <token>，且 token 对应用户 role 为 'admin'。"""
-    auth = request.headers.get("Authorization", "")
-    if auth.startswith("Bearer "):
-        token = auth.split(None, 1)[1]
-    else:
-        token = None
-
-    if not token or token not in TOKENS:
-        return jsonify({"error": "missing or invalid token"}), 401
-
-    admin_user_id = TOKENS[token]
-    session = SessionLocal()
-    try:
-        admin_user = session.query(User).get(admin_user_id)
-        if not admin_user or admin_user.role != "admin":
-            return jsonify({"error": "admin privileges required"}), 403
-
-        target = session.query(User).get(user_id)
-        if not target:
-            return jsonify({"error": "user not found"}), 404
-
-        session.delete(target)
-        session.commit()
-        return jsonify({"msg": "user deleted", "id": user_id})
-    finally:
-        session.close()
-
 
 @app.route("/api/users/me", methods=["DELETE"])
 def api_delete_me():
