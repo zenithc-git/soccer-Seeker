@@ -7,7 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from backend.core.db import Base, engine  # 注意，这里用 backend.core.db
+from backend.core.db import Base, engine 
 
 def init_db():
     Base.metadata.create_all(bind=engine)

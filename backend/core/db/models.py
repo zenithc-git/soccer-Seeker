@@ -1,5 +1,5 @@
 # backend/core/db/models.py
-from sqlalchemy import Column, Integer, String, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, ForeignKey, UniqueConstraint, Date, Enum
 from sqlalchemy.orm import relationship
 from .base import Base
 
@@ -58,3 +58,21 @@ class TeamSeasonStats(Base):
             f"<TeamSeasonStats season={self.season_id} "
             f"team={self.team_id} pos={self.position} pts={self.points}>"
         )
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    birthday = Column(Date, nullable=True)
+    role = Column(
+        Enum("user", "vip_user", "admin", name="role_enum"),
+        nullable=False,
+        server_default="user",
+    )
+    email = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=False)
+
+    def __repr__(self):
+        return f"<User id={self.id} email={self.email} role={self.role}>"
