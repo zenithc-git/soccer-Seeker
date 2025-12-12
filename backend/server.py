@@ -30,6 +30,9 @@ def home():
     <ul>
         <li><a href="/api/seasons">/api/seasons</a> 查看所有赛季</li>
         <li>
+            <button id="logoutBtn" class="btn">退出登录</button>
+        </li>
+        <li>
             <button id="getAllUsersBtn" class="btn">查看所有用户</button> 
         </li>
         <li>
@@ -162,6 +165,15 @@ def home():
         }
     });
 
+    // 退出登录逻辑
+    document.getElementById('logoutBtn').addEventListener('click', function(){
+        // 清除本地存储的 Token
+        localStorage.removeItem('token');
+        alert('已成功退出登录');
+        // 跳转到首页/登录页
+         window.location.reload(); // 刷新页面
+    });
+
     // 查看所有用户请求
     document.getElementById('getAllUsersBtn').addEventListener('click', async function(){
         const token = localStorage.getItem('token');
@@ -259,7 +271,7 @@ def api_register():
     email = data.get("email")
     password = data.get("password")
     birthday = data.get("birthday")  # 格式：YYYY-MM-DD
-    role = data.get("role", "user")  # 默认角色为"user"
+    role = data.get("role")  # 默认角色为"user"
 
     if not (name and email and password):
         return jsonify({"error": "missing required fields (name,email,password)"}), 400
