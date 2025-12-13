@@ -167,12 +167,18 @@ webui = """
         }catch(e){ alert('网络错误: '+e) }
     })
 
-    // 简易授权获取
-    function requireAuth(){
+    // 简易授权获取（带抑制重复弹窗）
+    let authPrompted = false;
+    function requireAuth(opts = {}){
+      const { silent = false } = opts;
       const token = localStorage.getItem('token');
       if(!token){
-        alert('请先登录后再查看数据');
-        showBackdrop('choiceBackdrop');
+        if(!silent && !authPrompted){
+          authPrompted = true;
+          alert('请先登录后再查看数据');
+          showBackdrop('choiceBackdrop');
+          setTimeout(()=>{ authPrompted = false; }, 400);
+        }
         return null;
       }
       return token;
@@ -270,8 +276,8 @@ webui = """
       }
     }
 
-    async function fetchStandings(){
-      const token = requireAuth();
+    async function fetchStandings(token){
+      token = token || requireAuth({silent:true});
       if(!token){ 
         document.getElementById('standingsStatus').textContent='需登录后查看积分榜';
         return; 
@@ -302,8 +308,8 @@ webui = """
       }
     }
 
-    async function fetchOtherBoards(){
-      const token = requireAuth();
+    async function fetchOtherBoards(token){
+      token = token || requireAuth({silent:true});
       if(!token){ 
         document.getElementById('otherBoardsStatus').textContent='需登录后查看榜单';
         return; 
@@ -346,12 +352,14 @@ webui = """
     }
 
     function refreshBoards(){
-      fetchStandings();
-      fetchOtherBoards();
+      const token = requireAuth();
+      if(!token) return;
+      fetchStandings(token);
+      fetchOtherBoards(token);
     }
 
     document.getElementById('loadStandingsBtn').addEventListener('click', refreshBoards);
-    document.getElementById('boardTypeSelect').addEventListener('change', fetchOtherBoards);
+    document.getElementById('boardTypeSelect').addEventListener('change', function(){ fetchOtherBoards(requireAuth({silent:true})) });
 
     // 初始加载：直接预取赛季与榜单（无需登录）
     window.addEventListener('load', async function(){ 
