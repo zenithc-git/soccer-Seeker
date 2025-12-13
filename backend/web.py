@@ -162,14 +162,26 @@ webui = """
             localStorage.setItem('token', data.token);
             alert('登录成功，已保存token'); 
             hideBackdrop('loginBackdrop');
+            // 登录成功后自动刷新页面，确保所有数据与状态同步
+            window.location.reload();
         }catch(e){ alert('网络错误: '+e) }
     })
 
+    // 简易授权获取
+    function requireAuth(){
+      const token = localStorage.getItem('token');
+      if(!token){
+        alert('请先登录后再查看数据');
+        showBackdrop('choiceBackdrop');
+        return null;
+      }
+      return token;
+    }
+
     // 获取当前用户信息
     document.getElementById('getUserInfoBtn').addEventListener('click', async function(){
-        const token = localStorage.getItem('token');
+        const token = requireAuth();
         if (!token) {
-            alert('请先登录（需token）');
             return;
         }
 
@@ -200,8 +212,8 @@ webui = """
 
     // 查看所有用户
     document.getElementById('getAllUsersBtn').addEventListener('click', async function(){
-        const token = localStorage.getItem('token');
-        if (!token) { alert('请先登录'); return; }
+        const token = requireAuth();
+        if (!token) { return; }
         try {
             const res = await fetch('/api/users', {method: 'GET',headers: { "Authorization": `Bearer ${token}` }});
             const data = await res.json();
@@ -214,8 +226,8 @@ webui = """
 
     // 删除当前账号
     document.getElementById('deleteAccountBtn').addEventListener('click', async function(){
-        const token = localStorage.getItem('token');
-        if (!token) { alert('请先登录'); return; }
+        const token = requireAuth();
+        if (!token) { return; }
         if (!confirm('确定要删除当前账号吗？此操作不可恢复')) { return; }
         try {
             const res = await fetch('/api/users/me', {
@@ -233,10 +245,15 @@ webui = """
 
     // --- 赛季下拉 + 榜单 ---
     async function loadSeasons(){
+      const token = requireAuth();
+      if(!token){
+        document.getElementById('standingsStatus').textContent = '需登录后查看赛季与榜单';
+        return;
+      }
       const select = document.getElementById('seasonSelect');
       select.innerHTML = '';
       try{
-        const res = await fetch('/api/seasons');
+        const res = await fetch('/api/seasons',{headers:{'Authorization':`Bearer ${token}`}});
         const data = await res.json();
         if(!res.ok || !data.seasons){
           document.getElementById('standingsStatus').textContent = '获取赛季失败: '+(data.error||res.status);
@@ -254,6 +271,11 @@ webui = """
     }
 
     async function fetchStandings(){
+      const token = requireAuth();
+      if(!token){ 
+        document.getElementById('standingsStatus').textContent='需登录后查看积分榜';
+        return; 
+      }
       const season = document.getElementById('seasonSelect').value;
       const status = document.getElementById('standingsStatus');
       const grid = document.getElementById('standingsGrid');
@@ -262,7 +284,7 @@ webui = """
       grid.innerHTML = '';
       try{
         const url = `/api/standings?season=${encodeURIComponent(season)}&type=points`;
-        const res = await fetch(url);
+        const res = await fetch(url,{headers:{'Authorization':`Bearer ${token}`}});
         const data = await res.json();
         if(!res.ok){ status.textContent = '获取失败: '+(data.error||res.status); return; }
         status.textContent = `${data.count} 支球队 · 赛季 ${data.season} · 积分榜`;
@@ -281,6 +303,11 @@ webui = """
     }
 
     async function fetchOtherBoards(){
+      const token = requireAuth();
+      if(!token){ 
+        document.getElementById('otherBoardsStatus').textContent='需登录后查看榜单';
+        return; 
+      }
       const season = document.getElementById('seasonSelect').value;
       const type = document.getElementById('boardTypeSelect').value;
       const status = document.getElementById('otherBoardsStatus');
@@ -290,7 +317,7 @@ webui = """
       container.innerHTML = '';
 
       try{
-        const res = await fetch(`/api/standings?season=${encodeURIComponent(season)}&type=${encodeURIComponent(type)}`);
+        const res = await fetch(`/api/standings?season=${encodeURIComponent(season)}&type=${encodeURIComponent(type)}`,{headers:{'Authorization':`Bearer ${token}`}});
         const data = await res.json();
         if(!res.ok){ status.textContent = '获取失败: '+(data.error||res.status); return; }
         status.textContent = `已更新榜单 · 赛季 ${data.season} · 指标 ${type}`;
@@ -326,9 +353,15 @@ webui = """
     document.getElementById('loadStandingsBtn').addEventListener('click', refreshBoards);
     document.getElementById('boardTypeSelect').addEventListener('change', fetchOtherBoards);
 
-    // 初始加载：展示选择弹窗并预取赛季
+    // 初始加载：直接预取赛季与榜单（无需登录）
     window.addEventListener('load', async function(){ 
-      setTimeout(()=> showBackdrop('choiceBackdrop'), 150);
+      const token = localStorage.getItem('token');
+      if(!token){
+        document.getElementById('standingsStatus').textContent = '需登录后查看积分榜';
+        document.getElementById('otherBoardsStatus').textContent = '需登录后查看其他榜';
+        showBackdrop('choiceBackdrop');
+        return;
+      }
       await loadSeasons();
       refreshBoards();
     })
