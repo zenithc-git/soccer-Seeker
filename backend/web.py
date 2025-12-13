@@ -126,11 +126,11 @@ webui = """
         <!-- Choice modal -->
     <div id="choiceBackdrop" class="modal-backdrop">
       <div class="modal">
-        <h2>??</h2>
-        <p>????????? ? ????</p>
+        <h2>请登录</h2>
+        <p>登录/注册</p>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="choiceRegister" class="btn">??</button>
-          <button id="choiceLogin" class="btn secondary">??</button>
+          <button id="choiceRegister" class="btn">注册</button>
+          <button id="choiceLogin" class="btn secondary">登录</button>
         </div>
       </div>
     </div>
@@ -138,15 +138,15 @@ webui = """
     <!-- Register modal -->
     <div id="registerBackdrop" class="modal-backdrop">
       <div class="modal">
-        <h2>??</h2>
-        <div class="row"><input id="reg_name" placeholder="???"></div>
-        <div class="row"><input id="reg_email" placeholder="??"></div>
-        <div class="row"><input id="reg_password" placeholder="??" type="password"></div>
-        <div class="row"><input id="reg_birthday" placeholder="?? (YYYY-MM-DD)"></div>
-        <div class="row"><input id="reg_role" placeholder="?? (user/vip_user/admin) ??user"></div>
+        <h2>注册</h2>
+        <div class="row"><input id="reg_name" placeholder="账号名"></div>
+        <div class="row"><input id="reg_email" placeholder="邮箱"></div>
+        <div class="row"><input id="reg_password" placeholder="密码" type="password"></div>
+        <div class="row"><input id="reg_birthday" placeholder="生日 (YYYY-MM-DD)"></div>
+        <div class="row"><input id="reg_role" placeholder=权限 (user/vip_user/admin) 默认普通user"></div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="reg_cancel" class="btn secondary">??</button>
-          <button id="reg_submit" class="btn">??</button>
+          <button id="reg_cancel" class="btn secondary">取消</button>
+          <button id="reg_submit" class="btn">提交</button>
         </div>
       </div>
     </div>
@@ -154,12 +154,12 @@ webui = """
     <!-- Login modal -->
     <div id="loginBackdrop" class="modal-backdrop">
       <div class="modal">
-        <h2>??</h2>
-        <div class="row"><input id="login_email" placeholder="??"></div>
-        <div class="row"><input id="login_password" placeholder="??" type="password"></div>
+        <h2>登录</h2>
+        <div class="row"><input id="login_email" placeholder="请输入注册邮箱"></div>
+        <div class="row"><input id="login_password" placeholder="密码" type="password"></div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="login_cancel" class="btn secondary">??</button>
-          <button id="login_submit" class="btn">??</button>
+          <button id="login_cancel" class="btn secondary">取消</button>
+          <button id="login_submit" class="btn">提交</button>
         </div>
       </div>
     </div>
@@ -172,7 +172,7 @@ webui = """
             <h2 id="teamDetailTitle" style="margin-bottom:6px"></h2>
             <div id="teamDetailBadges" class="muted"></div>
           </div>
-          <button id="teamDetailClose" class="btn secondary">??</button>
+          <button id="teamDetailClose" class="btn secondary">关闭</button>
         </div>
         <div id="teamDetailBody" style="margin-top:12px"></div>
       </div>
@@ -473,11 +473,11 @@ webui = """
         const res = await fetch(url,{headers:{'Authorization':`Bearer ${token}`} });
         const data = await res.json();
         if(!res.ok){ status.textContent = 'Failed: '+(data.error||res.status); return; }
-        status.textContent = `${data.count} teams ? season ${data.season} ? table`;
+        status.textContent = `${data.count} 支球队 · 赛季 ${data.season} · 积分榜`;
         if(!data.rows || data.rows.length===0){ grid.innerHTML='<div class="muted">No data</div>'; return; }
         grid.innerHTML = data.rows.map((row,index)=>`
           <div class="stat-card team-card" data-team-id="${row.team_id||''}" data-team-name="${row.team||''}">
-            <div class="table-head">#${row.position || index+1} ? ${row.team}</div>
+            <div class="table-head">#${row.position || index+1} · ${row.team}</div>
             <div class="pill" style="margin:8px 0">Points ${row.points}</div>
             <div class="muted">Played ${row.played} | W${row.won} D${row.drawn} L${row.lost}</div>
             <div class="muted">GF ${row.gf} GA ${row.ga} GD ${row.gd}</div>
