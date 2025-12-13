@@ -1,12 +1,35 @@
 # backend/server.py
-from flask import Flask, jsonify, request
 import secrets
+
+from flask import Flask, jsonify, request
 from web import webui
 
 from core.db import SessionLocal
-from core.db.models import User, Season, Team, TeamSeasonStats
+from core.db.models import User, Season, Team, TeamSeasonStats, Player
 
 app = Flask(__name__)
+
+
+def get_players_for_team(session, team_id: int):
+    """Return serialized players for a team from DB."""
+    rows = (
+        session.query(Player)
+        .filter(Player.team_id == team_id)
+        .order_by(Player.position.asc(), Player.shirt_no.asc())
+        .all()
+    )
+    result = []
+    for p in rows:
+        result.append({
+            "id": p.id,
+            "first_name": p.first_name,
+            "last_name": p.last_name,
+            "shirt_no": p.shirt_no,
+            "birth_date": p.birth_date.isoformat() if p.birth_date else None,
+            "position": p.position,
+        })
+    return result
+
 
 # 新增：球队历年数据API
 @app.route("/api/team_stats", methods=["GET"])
@@ -133,6 +156,7 @@ def api_standings():
         rows = []
         for st, team in q.all():
             rows.append({
+                "team_id": team.id,
                 "team": team.name,
                 "position": st.position,
                 "played": st.played,
@@ -153,6 +177,72 @@ def api_standings():
         })
     finally:
         session.close()
+
+
+@app.route("/api/team_profile", methods=["GET"])
+def api_team_profile():
+    """
+    Team homepage info:
+    - Query params: team_id (preferred) or team_name, optional season (end_year).
+    - Returns W/D/L for the season and all players of the team.
+    """
+    team_id = request.args.get("team_id", type=int)
+    team_name = request.args.get("team_name", type=str)
+    season_year = request.args.get("season", type=int)
+
+    if not team_id and not team_name:
+        return jsonify({"error": "missing team_id or team_name"}), 400
+
+    session = SessionLocal()
+    try:
+        team = session.query(Team).filter_by(id=team_id).first() if team_id else session.query(Team).filter_by(name=team_name).first()
+        if not team:
+            return jsonify({"error": "team not found"}), 404
+
+        stats_row = None
+        season = None
+        if season_year:
+            season = session.query(Season).filter_by(end_year=season_year).first()
+        else:
+            season = session.query(Season).order_by(Season.end_year.desc()).first()
+
+        if season:
+            stats_row = (
+                session.query(TeamSeasonStats)
+                .filter_by(team_id=team.id, season_id=season.id)
+                .first()
+            )
+
+        players = get_players_for_team(session, team.id)
+
+        if not stats_row and not players:
+            # Provide a friendly message when no data is available at all
+            return jsonify({"error": "no data found for this team"}), 404
+
+        payload = {
+            "team_id": team.id,
+            "team": team.name,
+            "season": season.end_year if season else None,
+            "players": players,
+            "player_count": len(players),
+        }
+        if stats_row:
+            payload.update({
+                "played": stats_row.played,
+                "won": stats_row.won,
+                "drawn": stats_row.drawn,
+                "lost": stats_row.lost,
+                "gf": stats_row.gf,
+                "ga": stats_row.ga,
+                "gd": stats_row.gd,
+                "points": stats_row.points,
+                "position": stats_row.position,
+            })
+
+        return jsonify(payload)
+    finally:
+        session.close()
+
 
 @app.route("/api/register", methods=["POST"])
 def api_register():
@@ -323,4 +413,3 @@ def api_delete_me():
 if __name__ == "__main__":
     # host 设成 0.0.0.0 方便以后远程访问
     app.run(host="0.0.0.0", port=5000, debug=True)
-

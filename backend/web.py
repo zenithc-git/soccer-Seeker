@@ -20,8 +20,19 @@ webui = """
       .boards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px}
       .stat-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px}
       .stat-card h4{margin:0 0 6px;font-size:16px;color:#0f172a}
+      .team-card{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;border:1px solid transparent}
+      .team-card:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(0,0,0,0.12);border-color:#e0e7ff}
       .muted{color:#475569;font-size:13px}
       .table-head{font-weight:bold;color:#0f172a}
+      .record-row{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+      .record-chip{padding:10px 12px;border-radius:10px;font-weight:bold}
+      .record-win{background:#e8f5e9;color:#2e7d32}
+      .record-draw{background:#f3f4f6;color:#374151}
+      .record-loss{background:#ffebee;color:#c62828}
+      .player-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:10px}
+      .player-chip{background:#e3f2fd;border-radius:10px;padding:8px 10px;color:#0d47a1;font-weight:600}
+      .team-modal{max-width:760px;width:95%}
+      .badge{display:inline-block;padding:6px 10px;border-radius:10px;font-weight:bold;font-size:12px;background:#e2e8f0;color:#0f172a;margin-right:6px}
       @media(max-width:600px){
         .btn{width:100%}
         .section-head{flex-direction:column;align-items:flex-start}
@@ -64,8 +75,22 @@ webui = """
         <div id="otherBoardsStatus" class="muted" style="margin-top:10px">等待请求...</div>
         <div id="otherBoards" class="boards-grid"></div>
       </div>
+
+      <div class="card" id="teamProfileCard">
+        <div class="section-head">
+          <div>
+            <h2 id="teamProfileTitle">Team hub</h2>
+            <p class="muted" id="teamProfileSubtitle">Click any team card to view wins/draws/losses and the full squad</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button id="openTeamDetailBtn" class="btn">打开详情页</button>
+            <button id="clearTeamProfile" class="btn secondary">清除</button>
+          </div>
+        </div>
+        <div id="teamProfileContent" class="muted">No team selected yet</div>
+      </div>
       
-        <div class="card" id="teamStatsCard">
+      <div class="card" id="teamStatsCard">
           <div class="section-head">
             <div>
               <h2>球队历年数据可视化</h2>
@@ -98,14 +123,14 @@ webui = """
       </div>
     </div>
 
-    <!-- Choice modal -->
+        <!-- Choice modal -->
     <div id="choiceBackdrop" class="modal-backdrop">
       <div class="modal">
-        <h2>欢迎</h2>
-        <p>请选择：注册新账号 或 直接登录</p>
+        <h2>??</h2>
+        <p>????????? ? ????</p>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="choiceRegister" class="btn">注册</button>
-          <button id="choiceLogin" class="btn secondary">登录</button>
+          <button id="choiceRegister" class="btn">??</button>
+          <button id="choiceLogin" class="btn secondary">??</button>
         </div>
       </div>
     </div>
@@ -113,15 +138,15 @@ webui = """
     <!-- Register modal -->
     <div id="registerBackdrop" class="modal-backdrop">
       <div class="modal">
-        <h2>注册</h2>
-        <div class="row"><input id="reg_name" placeholder="用户名"></div>
-        <div class="row"><input id="reg_email" placeholder="邮箱"></div>
-        <div class="row"><input id="reg_password" placeholder="密码" type="password"></div>
-        <div class="row"><input id="reg_birthday" placeholder="生日 (YYYY-MM-DD)"></div>
-        <div class="row"><input id="reg_role" placeholder="角色 (user/vip_user/admin) 默认user"></div>
+        <h2>??</h2>
+        <div class="row"><input id="reg_name" placeholder="???"></div>
+        <div class="row"><input id="reg_email" placeholder="??"></div>
+        <div class="row"><input id="reg_password" placeholder="??" type="password"></div>
+        <div class="row"><input id="reg_birthday" placeholder="?? (YYYY-MM-DD)"></div>
+        <div class="row"><input id="reg_role" placeholder="?? (user/vip_user/admin) ??user"></div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="reg_cancel" class="btn secondary">取消</button>
-          <button id="reg_submit" class="btn">提交</button>
+          <button id="reg_cancel" class="btn secondary">??</button>
+          <button id="reg_submit" class="btn">??</button>
         </div>
       </div>
     </div>
@@ -129,18 +154,32 @@ webui = """
     <!-- Login modal -->
     <div id="loginBackdrop" class="modal-backdrop">
       <div class="modal">
-        <h2>登录</h2>
-        <div class="row"><input id="login_email" placeholder="邮箱"></div>
-        <div class="row"><input id="login_password" placeholder="密码" type="password"></div>
+        <h2>??</h2>
+        <div class="row"><input id="login_email" placeholder="??"></div>
+        <div class="row"><input id="login_password" placeholder="??" type="password"></div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="login_cancel" class="btn secondary">取消</button>
-          <button id="login_submit" class="btn">登录</button>
+          <button id="login_cancel" class="btn secondary">??</button>
+          <button id="login_submit" class="btn">??</button>
         </div>
       </div>
     </div>
 
+    <!-- Team detail modal -->
+    <div id="teamDetailBackdrop" class="modal-backdrop">
+      <div class="modal team-modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <div>
+            <h2 id="teamDetailTitle" style="margin-bottom:6px"></h2>
+            <div id="teamDetailBadges" class="muted"></div>
+          </div>
+          <button id="teamDetailClose" class="btn secondary">??</button>
+        </div>
+        <div id="teamDetailBody" style="margin-top:12px"></div>
+      </div>
+    </div>
+
     <script>
-      // 引入 ECharts CDN
+// 引入 ECharts CDN
       const echartsScript = document.createElement('script');
       echartsScript.src = 'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js';
       document.head.appendChild(echartsScript);
@@ -420,32 +459,35 @@ webui = """
     async function fetchStandings(token){
       token = token || requireAuth({silent:true});
       if(!token){ 
-        document.getElementById('standingsStatus').textContent='需登录后查看积分榜';
+        document.getElementById('standingsStatus').textContent='Login required to view the table';
         return; 
       }
       const season = document.getElementById('seasonSelect').value;
       const status = document.getElementById('standingsStatus');
       const grid = document.getElementById('standingsGrid');
-      if(!season){ status.textContent='请先选择赛季'; return; }
-      status.textContent = '积分榜加载中...';
+      if(!season){ status.textContent='Select a season first'; return; }
+      status.textContent = 'Loading table...';
       grid.innerHTML = '';
       try{
         const url = `/api/standings?season=${encodeURIComponent(season)}&type=points`;
-        const res = await fetch(url,{headers:{'Authorization':`Bearer ${token}`}});
+        const res = await fetch(url,{headers:{'Authorization':`Bearer ${token}`} });
         const data = await res.json();
-        if(!res.ok){ status.textContent = '获取失败: '+(data.error||res.status); return; }
-        status.textContent = `${data.count} 支球队 · 赛季 ${data.season} · 积分榜`;
-        if(!data.rows || data.rows.length===0){ grid.innerHTML='<div class="muted">暂无数据</div>'; return; }
+        if(!res.ok){ status.textContent = 'Failed: '+(data.error||res.status); return; }
+        status.textContent = `${data.count} teams ? season ${data.season} ? table`;
+        if(!data.rows || data.rows.length===0){ grid.innerHTML='<div class="muted">No data</div>'; return; }
         grid.innerHTML = data.rows.map((row,index)=>`
-          <div class="stat-card">
-            <div class="table-head">#${row.position || index+1} · ${row.team}</div>
-            <div class="pill" style="margin:8px 0">积分 ${row.points}</div>
-            <div class="muted">场次 ${row.played} | 胜 ${row.won} 平 ${row.drawn} 负 ${row.lost}</div>
-            <div class="muted">进 ${row.gf} 失 ${row.ga} 净 ${row.gd}</div>
+          <div class="stat-card team-card" data-team-id="${row.team_id||''}" data-team-name="${row.team||''}">
+            <div class="table-head">#${row.position || index+1} ? ${row.team}</div>
+            <div class="pill" style="margin:8px 0">Points ${row.points}</div>
+            <div class="muted">Played ${row.played} | W${row.won} D${row.drawn} L${row.lost}</div>
+            <div class="muted">GF ${row.gf} GA ${row.ga} GD ${row.gd}</div>
           </div>
         `).join('');
+        grid.querySelectorAll('.team-card').forEach(card=>{
+          card.addEventListener('click', ()=> openTeamProfile(card.dataset.teamId, card.dataset.teamName));
+        });
       }catch(e){
-        status.textContent = '网络错误: '+e;
+        status.textContent = 'Network error: '+e;
       }
     }
 
@@ -492,6 +534,110 @@ webui = """
       }
     }
 
+
+    let lastTeamData = null;
+
+    function resetTeamProfile(){
+      lastTeamData = null;
+      document.getElementById('teamProfileTitle').textContent = 'Team hub';
+      document.getElementById('teamProfileSubtitle').textContent = 'Click a team to view wins/draws/losses and squad list';
+      document.getElementById('teamProfileContent').innerHTML = '<div class="muted">No team selected yet</div>';
+      hideTeamDetail();
+    }
+
+    async function openTeamProfile(teamId, teamName){
+      const token = requireAuth();
+      if(!token){ return; }
+      const season = document.getElementById('seasonSelect').value;
+      const titleEl = document.getElementById('teamProfileTitle');
+      const subtitleEl = document.getElementById('teamProfileSubtitle');
+      const contentEl = document.getElementById('teamProfileContent');
+      titleEl.textContent = teamName || 'Team hub';
+      subtitleEl.textContent = 'Loading...';
+      contentEl.innerHTML = '<div class="muted">Loading...</div>';
+      try{
+        const params = new URLSearchParams();
+        if(teamId) params.append('team_id', teamId);
+        if(teamName) params.append('team_name', teamName);
+        if(season) params.append('season', season);
+        const res = await fetch(`/api/team_profile?${params.toString()}`,{headers:{'Authorization':`Bearer ${token}`} });
+        const data = await res.json();
+        if(!res.ok){
+          subtitleEl.textContent = data.error || 'Failed to load';
+          contentEl.innerHTML = '';
+          return;
+        }
+        lastTeamData = data;
+        renderTeamProfile(data);
+        subtitleEl.textContent = `Season ${data.season || season || ''} | Played ${data.played ?? '-'} | Points ${data.points ?? '-'}`;
+        renderTeamDetail(data);
+        showTeamDetail();
+      }catch(e){
+        subtitleEl.textContent = 'Network error: '+e;
+        contentEl.innerHTML = '';
+      }
+    }
+
+    function renderTeamProfile(data){
+      const contentEl = document.getElementById('teamProfileContent');
+      const players = data.players || [];
+      const playerChips = players.length
+        ? `<div class="player-grid">${players.map(p=>`<div class="player-chip">${(p.first_name||'').trim()} ${(p.last_name||'').trim()}${p.position?`  - ${p.position}`:''}</div>`).join('')}</div>`
+        : '<div class="muted">No player data</div>';
+      contentEl.innerHTML = `
+        <div class="record-row">
+          <div class="record-chip record-win">W ${data.won ?? '-'}</div>
+          <div class="record-chip record-draw">D ${data.drawn ?? '-'}</div>
+          <div class="record-chip record-loss">L ${data.lost ?? '-'}</div>
+        </div>
+        <div style="margin-top:6px">
+          <h4>Squad (${players.length})</h4>
+          ${playerChips}
+        </div>
+      `;
+    }
+
+    function renderTeamDetail(data){
+      const titleEl = document.getElementById('teamDetailTitle');
+      const badgeEl = document.getElementById('teamDetailBadges');
+      const bodyEl = document.getElementById('teamDetailBody');
+      titleEl.textContent = data.team || 'Team';
+      badgeEl.innerHTML = `
+        <span class="badge">Season ${data.season ?? '-'}</span>
+        <span class="badge">Rank ${data.position ?? '-'}</span>
+        <span class="badge">Points ${data.points ?? '-'}</span>
+      `;
+      const players = data.players || [];
+      bodyEl.innerHTML = `
+        <div class="record-row" style="margin-bottom:8px">
+          <div class="record-chip record-win">胜 ${data.won ?? '-'}</div>
+          <div class="record-chip record-draw">平 ${data.drawn ?? '-'}</div>
+          <div class="record-chip record-loss">负 ${data.lost ?? '-'}</div>
+        </div>
+        <div class="muted" style="margin-bottom:8px">进球 ${data.gf ?? '-'} · 失球 ${data.ga ?? '-'} · 净胜 ${data.gd ?? '-'}</div>
+        <h4 style="margin:10px 0 6px">球员名单 (${players.length})</h4>
+        <div class="player-grid">
+          ${players.map(p=>`<div class="player-chip">${(p.first_name||'').trim()} ${(p.last_name||'').trim()}${p.position?` - ${p.position}`:''}</div>`).join('') || '<div class="muted">暂无球员数据</div>'}
+        </div>
+      `;
+    }
+
+    function showTeamDetail(){
+      document.getElementById('teamDetailBackdrop').style.display = 'flex';
+    }
+    function hideTeamDetail(){
+      document.getElementById('teamDetailBackdrop').style.display = 'none';
+    }
+
+    document.getElementById('clearTeamProfile').addEventListener('click', resetTeamProfile);
+    document.getElementById('openTeamDetailBtn').addEventListener('click', function(){
+      if(!lastTeamData){ alert('请先点击积分榜的球队'); return; }
+      renderTeamDetail(lastTeamData);
+      showTeamDetail();
+    });
+    document.getElementById('teamDetailClose').addEventListener('click', hideTeamDetail);
+    document.getElementById('teamDetailBackdrop').addEventListener('click', function(e){ if(e.target.id === 'teamDetailBackdrop') hideTeamDetail(); });
+
     function refreshBoards(){
       const token = requireAuth();
       if(!token) return;
@@ -504,6 +650,7 @@ webui = """
 
     // 初始加载：直接预取赛季与榜单（无需登录）
     window.addEventListener('load', async function(){ 
+      resetTeamProfile();
       const token = localStorage.getItem('token');
       if(!token){
         document.getElementById('standingsStatus').textContent = '需登录后查看积分榜';
@@ -517,7 +664,7 @@ webui = """
       await loadSeasons();
       refreshBoards();
       syncAuthUI();
-    await loadTeams();
+      await loadTeams();
     })
     </script>
     """

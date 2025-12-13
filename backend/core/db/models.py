@@ -34,6 +34,11 @@ class Team(Base):
         back_populates="team",
         cascade="all, delete-orphan"
     )
+    players = relationship(
+        "Player",
+        back_populates="team",
+        cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Team {self.name}>"
@@ -90,3 +95,23 @@ class User(Base):
 
     def __repr__(self):
         return f"<User id={self.id} email={self.email} role={self.role}>"
+
+
+class Player(Base):
+    __tablename__ = "players"
+    __table_args__ = (
+        UniqueConstraint("team_id", "first_name", "last_name", "shirt_no", name="uq_team_player_unique"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
+    shirt_no = Column(Integer, nullable=True)
+    birth_date = Column(Date, nullable=True)
+    position = Column(String, nullable=True)
+    team_id = Column(Integer, ForeignKey("teams.id"), nullable=False, index=True)
+
+    team = relationship("Team", back_populates="players")
+
+    def __repr__(self):
+        return f"<Player {self.first_name} {self.last_name} team={self.team_id} no={self.shirt_no}>"
