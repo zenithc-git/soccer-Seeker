@@ -25,7 +25,7 @@ webui = """
         <li>
             <button id="deleteAccountBtn" class="btn">删除当前用户账号</button> 
         </li>
-        <li>/api/standings?season=xxxx 获取赛季积分榜</li>
+        <li><a href="/api/standings?season=2020">/api/standings?season=2020</a> 获取赛季积分榜</li>
     </ul>
 
     <div style="margin-top:18px">

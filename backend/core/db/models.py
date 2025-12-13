@@ -1,5 +1,7 @@
 # backend/core/db/models.py
-from sqlalchemy import Column, Integer, String, ForeignKey, UniqueConstraint, Date, Enum
+from sqlalchemy import (
+    Column, Integer, String, ForeignKey, UniqueConstraint, Date, Enum, Index
+)
 from sqlalchemy.orm import relationship
 from .base import Base
 
@@ -7,11 +9,15 @@ from .base import Base
 class Season(Base):
     __tablename__ = "seasons"
 
-    id = Column(Integer, primary_key=True)
-    end_year = Column(Integer, unique=True, nullable=False)   # 1993, 1998, ...
-    name = Column(String, unique=True, nullable=False)        # "1992-1993"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    end_year = Column(Integer, unique=True, nullable=False, index=True)   # 1993, 1998, ...
+    name = Column(String, unique=True, nullable=False)                    # "1992-1993"
 
-    team_stats = relationship("TeamSeasonStats", back_populates="season")
+    team_stats = relationship(
+        "TeamSeasonStats",
+        back_populates="season",
+        cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Season {self.name}>"
@@ -20,10 +26,14 @@ class Season(Base):
 class Team(Base):
     __tablename__ = "teams"
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True, nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, unique=True, nullable=False, index=True)
 
-    team_stats = relationship("TeamSeasonStats", back_populates="team")
+    team_stats = relationship(
+        "TeamSeasonStats",
+        back_populates="team",
+        cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Team {self.name}>"
@@ -33,22 +43,26 @@ class TeamSeasonStats(Base):
     __tablename__ = "team_season_stats"
     __table_args__ = (
         UniqueConstraint("season_id", "team_id", name="uq_team_season"),
+        # 常用查询：赛季榜单/排序
+        Index("ix_team_season_stats_season_pos", "season_id", "position"),
+        Index("ix_team_season_stats_season_points", "season_id", "points"),
     )
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     season_id = Column(Integer, ForeignKey("seasons.id"), nullable=False)
     team_id = Column(Integer, ForeignKey("teams.id"), nullable=False)
 
-    position = Column(Integer)
-    played   = Column(Integer)
-    won      = Column(Integer)
-    drawn    = Column(Integer)
-    lost     = Column(Integer)
-    gf       = Column(Integer)
-    ga       = Column(Integer)
-    gd       = Column(Integer)
-    points   = Column(Integer)
-    notes    = Column(String)
+    position = Column(Integer, nullable=False)
+    played   = Column(Integer, nullable=False)
+    won      = Column(Integer, nullable=False)
+    drawn    = Column(Integer, nullable=False)
+    lost     = Column(Integer, nullable=False)
+    gf       = Column(Integer, nullable=False)
+    ga       = Column(Integer, nullable=False)
+    gd       = Column(Integer, nullable=False)
+    points   = Column(Integer, nullable=False)
+
+    notes    = Column(String, nullable=True)
 
     season = relationship("Season", back_populates="team_stats")
     team   = relationship("Team", back_populates="team_stats")
@@ -63,7 +77,7 @@ class TeamSeasonStats(Base):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     birthday = Column(Date, nullable=True)
     role = Column(

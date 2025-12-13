@@ -1,12 +1,10 @@
 # backend/server.py
 from flask import Flask, jsonify, request
-from data_loader import get_all_seasons, get_table_for_season
 import secrets
 from web import webui
 
-# DB imports for saving users
 from core.db import SessionLocal
-from core.db.models import User
+from core.db.models import User, Season, Team, TeamSeasonStats
 
 app = Flask(__name__)
 
@@ -25,29 +23,91 @@ def ping():
 # 返回所有赛季列表
 @app.route("/api/seasons", methods=["GET"])
 def api_seasons():
-    seasons = get_all_seasons()
-    return jsonify({"seasons": seasons})
+    session = SessionLocal()
+    try:
+        years = [s.end_year for s in session.query(Season).order_by(Season.end_year.asc()).all()]
+        return jsonify({"seasons": years})
+    finally:
+        session.close()
     
 @app.route("/api/standings", methods=["GET"])
 def api_standings():
     """
     请求参数：
-      - season (必需): 例如 2010
+      - season (必需): 例如 2010（这里指 end_year）
       - type   (可选): points / goals_for / goals_against / goal_diff
     """
-    season = request.args.get("season", type=int)
+    season_year = request.args.get("season", type=int)
     sort_type = request.args.get("type", default="points", type=str)
 
-    if season is None:
+    if season_year is None:
         return jsonify({"error": "missing season"}), 400
 
-    rows = get_table_for_season(season, sort_type)
-    return jsonify({
-        "season": season,
-        "type": sort_type,
-        "count": len(rows),
-        "rows": rows,
-    })
+    session = SessionLocal()
+    try:
+        season = session.query(Season).filter_by(end_year=season_year).first()
+        if not season:
+            return jsonify({"error": f"season {season_year} not found"}), 404
+
+        # 关联 team_season_stats + teams
+        q = (
+            session.query(TeamSeasonStats, Team)
+            .join(Team, Team.id == TeamSeasonStats.team_id)
+            .filter(TeamSeasonStats.season_id == season.id)
+        )
+
+        # 排序
+        if sort_type == "points":
+            q = q.order_by(
+                TeamSeasonStats.points.desc(),
+                TeamSeasonStats.gd.desc(),
+                TeamSeasonStats.gf.desc(),
+                Team.name.asc(),
+            )
+        elif sort_type == "goals_for":
+            q = q.order_by(
+                TeamSeasonStats.gf.desc(),
+                TeamSeasonStats.points.desc(),
+                Team.name.asc(),
+            )
+        elif sort_type == "goals_against":
+            q = q.order_by(
+                TeamSeasonStats.ga.asc(),
+                TeamSeasonStats.points.desc(),
+                Team.name.asc(),
+            )
+        elif sort_type == "goal_diff":
+            q = q.order_by(
+                TeamSeasonStats.gd.desc(),
+                TeamSeasonStats.points.desc(),
+                Team.name.asc(),
+            )
+        else:
+            return jsonify({"error": f"invalid type: {sort_type}"}), 400
+
+        rows = []
+        for st, team in q.all():
+            rows.append({
+                "team": team.name,
+                "position": st.position,
+                "played": st.played,
+                "won": st.won,
+                "drawn": st.drawn,
+                "lost": st.lost,
+                "gf": st.gf,
+                "ga": st.ga,
+                "gd": st.gd,
+                "points": st.points,
+            })
+
+        return jsonify({
+            "season": season_year,
+            "type": sort_type,
+            "count": len(rows),
+            "rows": rows,
+        })
+    finally:
+        session.close()
 
 @app.route("/api/register", methods=["POST"])
 def api_register():
