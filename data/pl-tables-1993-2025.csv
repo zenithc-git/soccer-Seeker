@@ -1,5 +1,5 @@
 season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
-1993,Manchester Utd,1,42,24,12,6,67,31,36,84
+1993,Manchester United,1,42,24,12,6,67,31,36,84
 1993,Aston Villa,2,42,21,11,10,57,40,17,74
 1993,Norwich City,3,42,21,9,12,61,65,-4,72
 1993,Blackburn,4,42,20,11,11,68,46,22,71
@@ -21,9 +21,9 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 1993,Crystal Palace,20,42,11,16,15,48,61,-13,49
 1993,Middlesbrough,21,42,11,11,20,54,75,-21,44
 1993,Nottingham Forest,22,42,10,10,22,41,62,-21,40
-1994,Manchester Utd,1,42,27,11,4,80,38,42,92
+1994,Manchester United,1,42,27,11,4,80,38,42,92
 1994,Blackburn,2,42,25,9,8,63,36,27,84
-1994,Newcastle Utd,3,42,23,8,11,82,41,41,77
+1994,Newcastle United,3,42,23,8,11,82,41,41,77
 1994,Arsenal,4,42,18,17,7,53,28,25,71
 1994,Leeds United,5,42,18,16,8,65,39,26,70
 1994,Wimbledon,6,42,18,11,13,56,53,3,65
@@ -44,11 +44,11 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 1994,Oldham Athletic,21,42,9,13,20,42,68,-26,40
 1994,Swindon Town,22,42,5,15,22,47,100,-53,30
 1995,Blackburn,1,42,27,8,7,80,39,41,89
-1995,Manchester Utd,2,42,26,10,6,77,29,48,88
+1995,Manchester United,2,42,26,10,6,77,29,48,88
 1995,Nottingham Forest,3,42,22,11,9,72,43,29,77
 1995,Liverpool,4,42,21,11,10,65,37,28,74
 1995,Leeds United,5,42,20,13,9,59,38,21,73
-1995,Newcastle Utd,6,42,20,12,10,67,47,20,72
+1995,Newcastle United,6,42,20,12,10,67,47,20,72
 1995,Tottenham,7,42,16,14,12,66,58,8,62
 1995,QPR,8,42,17,9,16,61,59,2,60
 1995,Wimbledon,9,42,15,11,16,48,65,-17,56
@@ -65,8 +65,8 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 1995,Norwich City,20,42,10,13,19,37,54,-17,43
 1995,Leicester City,21,42,6,11,25,45,80,-35,29
 1995,Ipswich Town,22,42,7,6,29,36,93,-57,27
-1996,Manchester Utd,1,38,25,7,6,73,35,38,82
-1996,Newcastle Utd,2,38,24,6,8,66,37,29,78
+1996,Manchester United,1,38,25,7,6,73,35,38,82
+1996,Newcastle United,2,38,24,6,8,66,37,29,78
 1996,Liverpool,3,38,20,11,7,70,34,36,71
 1996,Aston Villa,4,38,18,9,11,52,35,17,63
 1996,Arsenal,5,38,17,12,9,49,32,17,63
@@ -85,8 +85,8 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 1996,Manchester City,18,38,9,11,18,33,58,-25,38
 1996,QPR,19,38,9,6,23,38,57,-19,33
 1996,Bolton,20,38,8,5,25,39,71,-32,29
-1997,Manchester Utd,1,38,21,12,5,76,44,32,75
-1997,Newcastle Utd,2,38,19,11,8,73,40,33,68
+1997,Manchester United,1,38,21,12,5,76,44,32,75
+1997,Newcastle United,2,38,19,11,8,73,40,33,68
 1997,Arsenal,3,38,19,11,8,62,32,30,68
 1997,Liverpool,4,38,19,11,8,62,37,25,68
 1997,Aston Villa,5,38,17,10,11,47,34,13,61
@@ -106,7 +106,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 1997,Middlesbrough,19,38,10,12,16,51,60,-9,39
 1997,Nottingham Forest,20,38,6,16,16,31,59,-28,34
 1998,Arsenal,1,38,23,9,6,68,33,35,78
-1998,Manchester Utd,2,38,23,8,7,73,26,47,77
+1998,Manchester United,2,38,23,8,7,73,26,47,77
 1998,Liverpool,3,38,18,11,9,68,42,26,65
 1998,Chelsea,4,38,20,3,15,71,43,28,63
 1998,Leeds United,5,38,17,8,13,57,46,11,59
@@ -117,7 +117,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 1998,Leicester City,10,38,13,14,11,51,41,10,53
 1998,Coventry City,11,38,12,16,10,46,44,2,52
 1998,Southampton,12,38,14,6,18,50,55,-5,48
-1998,Newcastle Utd,13,38,11,11,16,35,44,-9,44
+1998,Newcastle United,13,38,11,11,16,35,44,-9,44
 1998,Tottenham,14,38,11,11,16,44,56,-12,44
 1998,Wimbledon,15,38,10,14,14,34,46,-12,44
 1998,Sheffield Weds,16,38,12,8,18,52,67,-15,44
@@ -125,7 +125,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 1998,Bolton,18,38,9,13,16,41,61,-20,40
 1998,Barnsley,19,38,10,5,23,37,82,-45,35
 1998,Crystal Palace,20,38,8,9,21,37,71,-34,33
-1999,Manchester Utd,1,38,22,13,3,80,37,43,79
+1999,Manchester United,1,38,22,13,3,80,37,43,79
 1999,Arsenal,2,38,22,12,4,59,17,42,78
 1999,Chelsea,3,38,20,15,3,57,30,27,75
 1999,Leeds United,4,38,18,13,7,62,34,28,67
@@ -137,7 +137,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 1999,Leicester City,10,38,12,13,13,40,46,-6,49
 1999,Tottenham,11,38,11,14,13,47,50,-3,47
 1999,Sheffield Weds,12,38,13,7,18,41,42,-1,46
-1999,Newcastle Utd,13,38,11,13,14,48,54,-6,46
+1999,Newcastle United,13,38,11,13,14,48,54,-6,46
 1999,Everton,14,38,11,10,17,42,47,-5,43
 1999,Coventry City,15,38,11,9,18,39,51,-12,42
 1999,Wimbledon,16,38,10,12,16,40,63,-23,42
@@ -145,7 +145,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 1999,Charlton Ath,18,38,8,12,18,41,56,-15,36
 1999,Blackburn,19,38,7,14,17,38,52,-14,35
 1999,Nottingham Forest,20,38,7,9,22,35,69,-34,30
-2000,Manchester Utd,1,38,28,7,3,97,45,52,91
+2000,Manchester United,1,38,28,7,3,97,45,52,91
 2000,Arsenal,2,38,22,7,9,73,43,30,73
 2000,Leeds United,3,38,21,6,11,58,43,15,69
 2000,Liverpool,4,38,19,10,9,51,30,21,67
@@ -155,7 +155,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2000,Leicester City,8,38,16,7,15,55,55,0,55
 2000,West Ham,9,38,15,10,13,52,53,-1,55
 2000,Tottenham,10,38,15,8,15,57,49,8,53
-2000,Newcastle Utd,11,38,14,10,14,63,54,9,52
+2000,Newcastle United,11,38,14,10,14,63,54,9,52
 2000,Middlesbrough,12,38,14,10,14,46,52,-6,52
 2000,Everton,13,38,12,14,12,59,49,10,50
 2000,Coventry City,14,38,12,8,18,47,54,-7,44
@@ -165,7 +165,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2000,Wimbledon,18,38,7,12,19,46,74,-28,33
 2000,Sheffield Weds,19,38,8,7,23,38,70,-32,31
 2000,Watford,20,38,6,6,26,35,77,-42,24
-2001,Manchester Utd,1,38,24,8,6,79,31,48,80
+2001,Manchester United,1,38,24,8,6,79,31,48,80
 2001,Arsenal,2,38,20,10,8,63,38,25,70
 2001,Liverpool,3,38,20,9,9,71,39,32,69
 2001,Leeds United,4,38,20,8,10,64,43,21,68
@@ -175,7 +175,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2001,Aston Villa,8,38,13,15,10,46,43,3,54
 2001,Charlton Ath,9,38,14,10,14,50,57,-7,52
 2001,Southampton,10,38,14,10,14,40,48,-8,52
-2001,Newcastle Utd,11,38,14,9,15,44,50,-6,51
+2001,Newcastle United,11,38,14,9,15,44,50,-6,51
 2001,Tottenham,12,38,13,10,15,47,54,-7,49
 2001,Leicester City,13,38,14,6,18,39,51,-12,48
 2001,Middlesbrough,14,38,9,15,14,44,44,0,42
@@ -187,8 +187,8 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2001,Bradford City,20,38,5,11,22,30,70,-40,26
 2002,Arsenal,1,38,26,9,3,79,36,43,87
 2002,Liverpool,2,38,24,8,6,67,30,37,80
-2002,Manchester Utd,3,38,24,5,9,87,45,42,77
-2002,Newcastle Utd,4,38,21,8,9,74,52,22,71
+2002,Manchester United,3,38,24,5,9,87,45,42,77
+2002,Newcastle United,4,38,21,8,9,74,52,22,71
 2002,Leeds United,5,38,18,12,8,53,37,16,66
 2002,Chelsea,6,38,17,13,8,66,38,28,64
 2002,West Ham,7,38,15,8,15,48,57,-9,53
@@ -205,9 +205,9 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2002,Ipswich Town,18,38,9,9,20,41,64,-23,36
 2002,Derby County,19,38,8,6,24,33,63,-30,30
 2002,Leicester City,20,38,5,13,20,30,64,-34,28
-2003,Manchester Utd,1,38,25,8,5,74,34,40,83
+2003,Manchester United,1,38,25,8,5,74,34,40,83
 2003,Arsenal,2,38,23,9,6,85,42,43,78
-2003,Newcastle Utd,3,38,21,6,11,63,48,15,69
+2003,Newcastle United,3,38,21,6,11,63,48,15,69
 2003,Chelsea,4,38,19,10,9,68,38,30,67
 2003,Liverpool,5,38,18,10,10,61,41,20,64
 2003,Blackburn,6,38,16,12,10,52,43,9,60
@@ -227,9 +227,9 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2003,Sunderland,20,38,4,7,27,21,65,-44,19
 2004,Arsenal,1,38,26,12,0,73,26,47,90
 2004,Chelsea,2,38,24,7,7,67,30,37,79
-2004,Manchester Utd,3,38,23,6,9,64,35,29,75
+2004,Manchester United,3,38,23,6,9,64,35,29,75
 2004,Liverpool,4,38,16,12,10,55,37,18,60
-2004,Newcastle Utd,5,38,13,17,8,52,40,12,56
+2004,Newcastle United,5,38,13,17,8,52,40,12,56
 2004,Aston Villa,6,38,15,11,12,48,44,4,56
 2004,Charlton Ath,7,38,14,11,13,51,51,0,53
 2004,Bolton,8,38,14,11,13,48,56,-8,53
@@ -247,7 +247,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2004,Wolves,20,38,7,12,19,38,77,-39,33
 2005,Chelsea,1,38,29,8,1,72,15,57,95
 2005,Arsenal,2,38,25,8,5,87,36,51,83
-2005,Manchester Utd,3,38,22,11,5,58,26,32,77
+2005,Manchester United,3,38,22,11,5,58,26,32,77
 2005,Everton,4,38,18,7,13,45,46,-1,61
 2005,Liverpool,5,38,17,7,14,52,41,11,58
 2005,Bolton,6,38,16,10,12,49,44,5,58
@@ -258,7 +258,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2005,Charlton Ath,11,38,12,10,16,42,58,-16,46
 2005,Birmingham City,12,38,11,12,15,40,46,-6,45
 2005,Fulham,13,38,12,8,18,52,60,-8,44
-2005,Newcastle Utd,14,38,10,14,14,47,57,-10,44
+2005,Newcastle United,14,38,10,14,14,47,57,-10,44
 2005,Blackburn,15,38,9,15,14,32,43,-11,42
 2005,Portsmouth,16,38,10,9,19,43,59,-16,39
 2005,West Brom,17,38,6,16,16,36,61,-25,34
@@ -266,12 +266,12 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2005,Norwich City,19,38,7,12,19,42,77,-35,33
 2005,Southampton,20,38,6,14,18,45,66,-21,32
 2006,Chelsea,1,38,29,4,5,72,22,50,91
-2006,Manchester Utd,2,38,25,8,5,72,34,38,83
+2006,Manchester United,2,38,25,8,5,72,34,38,83
 2006,Liverpool,3,38,25,7,6,57,25,32,82
 2006,Arsenal,4,38,20,7,11,68,31,37,67
 2006,Tottenham,5,38,18,11,9,53,38,15,65
 2006,Blackburn,6,38,19,6,13,51,42,9,63
-2006,Newcastle Utd,7,38,17,7,14,47,42,5,58
+2006,Newcastle United,7,38,17,7,14,47,42,5,58
 2006,Bolton,8,38,15,11,12,49,41,8,56
 2006,West Ham,9,38,16,7,15,52,55,-3,55
 2006,Wigan Athletic,10,38,15,6,17,45,52,-7,51
@@ -285,7 +285,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2006,Birmingham City,18,38,8,10,20,28,50,-22,34
 2006,West Brom,19,38,7,9,22,31,58,-27,30
 2006,Sunderland,20,38,3,6,29,26,69,-43,15
-2007,Manchester Utd,1,38,28,5,5,83,27,56,89
+2007,Manchester United,1,38,28,5,5,83,27,56,89
 2007,Chelsea,2,38,24,11,3,64,24,40,83
 2007,Liverpool,3,38,20,8,10,57,27,30,68
 2007,Arsenal,4,38,19,11,8,63,35,28,68
@@ -297,7 +297,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2007,Blackburn,10,38,15,7,16,52,54,-2,52
 2007,Aston Villa,11,38,11,17,10,43,41,2,50
 2007,Middlesbrough,12,38,12,10,16,44,49,-5,46
-2007,Newcastle Utd,13,38,11,10,17,38,47,-9,43
+2007,Newcastle United,13,38,11,10,17,38,47,-9,43
 2007,Manchester City,14,38,11,9,18,29,44,-15,42
 2007,West Ham,15,38,12,5,21,35,59,-24,41
 2007,Fulham,16,38,8,15,15,38,60,-22,39
@@ -305,7 +305,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2007,Sheffield Utd,18,38,10,8,20,32,55,-23,38
 2007,Charlton Ath,19,38,8,10,20,34,60,-26,34
 2007,Watford,20,38,5,13,20,29,59,-30,28
-2008,Manchester Utd,1,38,27,6,5,80,22,58,87
+2008,Manchester United,1,38,27,6,5,80,22,58,87
 2008,Chelsea,2,38,25,10,3,65,26,39,85
 2008,Arsenal,3,38,24,11,3,74,31,43,83
 2008,Liverpool,4,38,21,13,4,67,28,39,76
@@ -316,7 +316,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2008,Manchester City,9,38,15,10,13,45,53,-8,55
 2008,West Ham,10,38,13,10,15,42,50,-8,49
 2008,Tottenham,11,38,11,13,14,66,61,5,46
-2008,Newcastle Utd,12,38,11,10,17,45,65,-20,43
+2008,Newcastle United,12,38,11,10,17,45,65,-20,43
 2008,Middlesbrough,13,38,10,12,16,43,53,-10,42
 2008,Wigan Athletic,14,38,10,10,18,34,51,-17,40
 2008,Sunderland,15,38,11,6,21,36,59,-23,39
@@ -325,7 +325,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2008,Reading,18,38,10,6,22,41,66,-25,36
 2008,Birmingham City,19,38,8,11,19,46,62,-16,35
 2008,Derby County,20,38,1,8,29,20,89,-69,11
-2009,Manchester Utd,1,38,28,6,4,68,24,44,90
+2009,Manchester United,1,38,28,6,4,68,24,44,90
 2009,Liverpool,2,38,25,11,2,77,27,50,86
 2009,Chelsea,3,38,25,8,5,68,24,44,83
 2009,Arsenal,4,38,20,12,6,68,37,31,72
@@ -342,11 +342,11 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2009,Blackburn,15,38,10,11,17,40,60,-20,41
 2009,Sunderland,16,38,9,9,20,34,54,-20,36
 2009,Hull City,17,38,8,11,19,39,64,-25,35
-2009,Newcastle Utd,18,38,7,13,18,40,59,-19,34
+2009,Newcastle United,18,38,7,13,18,40,59,-19,34
 2009,Middlesbrough,19,38,7,11,20,28,57,-29,32
 2009,West Brom,20,38,8,8,22,36,67,-31,32
 2010,Chelsea,1,38,27,5,6,103,32,71,86
-2010,Manchester Utd,2,38,27,4,7,86,28,58,85
+2010,Manchester United,2,38,27,4,7,86,28,58,85
 2010,Arsenal,3,38,23,6,9,83,41,42,75
 2010,Tottenham,4,38,21,7,10,67,41,26,70
 2010,Manchester City,5,38,18,13,7,73,45,28,67
@@ -365,7 +365,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2010,Burnley,18,38,8,6,24,42,82,-40,30
 2010,Hull City,19,38,6,12,20,34,75,-41,30
 2010,Portsmouth,20,38,7,7,24,34,66,-32,19
-2011,Manchester Utd,1,38,23,11,4,78,37,41,80
+2011,Manchester United,1,38,23,11,4,78,37,41,80
 2011,Chelsea,2,38,21,8,9,69,33,36,71
 2011,Manchester City,3,38,21,8,9,60,33,27,71
 2011,Arsenal,4,38,19,11,8,72,43,29,68
@@ -376,7 +376,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2011,Aston Villa,9,38,12,12,14,48,59,-11,48
 2011,Sunderland,10,38,12,11,15,45,56,-11,47
 2011,West Brom,11,38,12,11,15,56,71,-15,47
-2011,Newcastle Utd,12,38,11,13,14,56,57,-1,46
+2011,Newcastle United,12,38,11,13,14,56,57,-1,46
 2011,Stoke City,13,38,13,7,18,46,48,-2,46
 2011,Bolton,14,38,12,10,16,52,56,-4,46
 2011,Blackburn,15,38,11,10,17,46,59,-13,43
@@ -386,10 +386,10 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2011,Blackpool,19,38,10,9,19,55,78,-23,39
 2011,West Ham,20,38,7,12,19,43,70,-27,33
 2012,Manchester City,1,38,28,5,5,93,29,64,89
-2012,Manchester Utd,2,38,28,5,5,89,33,56,89
+2012,Manchester United,2,38,28,5,5,89,33,56,89
 2012,Arsenal,3,38,21,7,10,74,49,25,70
 2012,Tottenham,4,38,20,9,9,66,41,25,69
-2012,Newcastle Utd,5,38,19,8,11,56,51,5,65
+2012,Newcastle United,5,38,19,8,11,56,51,5,65
 2012,Chelsea,6,38,18,10,10,65,46,19,64
 2012,Everton,7,38,15,11,12,50,40,10,56
 2012,Liverpool,8,38,14,10,14,47,40,7,52
@@ -405,7 +405,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2012,Bolton,18,38,10,6,22,46,77,-31,36
 2012,Blackburn,19,38,8,7,23,48,78,-30,31
 2012,Wolves,20,38,5,10,23,40,82,-42,25
-2013,Manchester Utd,1,38,28,5,5,86,43,43,89
+2013,Manchester United,1,38,28,5,5,86,43,43,89
 2013,Manchester City,2,38,23,9,6,66,34,32,78
 2013,Chelsea,3,38,22,9,7,75,39,36,75
 2013,Arsenal,4,38,21,10,7,72,37,35,73
@@ -420,7 +420,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2013,Stoke City,13,38,9,15,14,34,45,-11,42
 2013,Southampton,14,38,9,14,15,49,60,-11,41
 2013,Aston Villa,15,38,10,11,17,47,69,-22,41
-2013,Newcastle Utd,16,38,11,8,19,45,68,-23,41
+2013,Newcastle United,16,38,11,8,19,45,68,-23,41
 2013,Sunderland,17,38,9,12,17,41,54,-13,39
 2013,Wigan Athletic,18,38,9,9,20,47,73,-26,36
 2013,Reading,19,38,6,10,22,43,73,-30,28
@@ -431,10 +431,10 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2014,Arsenal,4,38,24,7,7,68,41,27,79
 2014,Everton,5,38,21,9,8,61,39,22,72
 2014,Tottenham,6,38,21,6,11,55,51,4,69
-2014,Manchester Utd,7,38,19,7,12,64,43,21,64
+2014,Manchester United,7,38,19,7,12,64,43,21,64
 2014,Southampton,8,38,15,11,12,54,46,8,56
 2014,Stoke City,9,38,13,11,14,45,52,-7,50
-2014,Newcastle Utd,10,38,15,4,19,43,59,-16,49
+2014,Newcastle United,10,38,15,4,19,43,59,-16,49
 2014,Crystal Palace,11,38,13,6,19,33,48,-15,45
 2014,Swansea City,12,38,11,9,18,54,54,0,42
 2014,West Ham,13,38,11,7,20,40,51,-11,40
@@ -448,7 +448,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2015,Chelsea,1,38,26,9,3,73,32,41,87
 2015,Manchester City,2,38,24,7,7,83,38,45,79
 2015,Arsenal,3,38,22,9,7,71,36,35,75
-2015,Manchester Utd,4,38,20,10,8,62,37,25,70
+2015,Manchester United,4,38,20,10,8,62,37,25,70
 2015,Tottenham,5,38,19,7,12,58,53,5,64
 2015,Liverpool,6,38,18,8,12,52,48,4,62
 2015,Southampton,7,38,18,6,14,54,33,21,60
@@ -459,7 +459,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2015,West Ham,12,38,12,11,15,44,47,-3,47
 2015,West Brom,13,38,11,11,16,38,51,-13,44
 2015,Leicester City,14,38,11,8,19,46,55,-9,41
-2015,Newcastle Utd,15,38,10,9,19,40,63,-23,39
+2015,Newcastle United,15,38,10,9,19,40,63,-23,39
 2015,Sunderland,16,38,7,17,14,31,53,-22,38
 2015,Aston Villa,17,38,10,8,20,31,57,-26,38
 2015,Hull City,18,38,8,11,19,33,51,-18,35
@@ -469,7 +469,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2016,Arsenal,2,38,20,11,7,65,36,29,71
 2016,Tottenham,3,38,19,13,6,69,35,34,70
 2016,Manchester City,4,38,19,9,10,71,41,30,66
-2016,Manchester Utd,5,38,19,9,10,49,35,14,66
+2016,Manchester United,5,38,19,9,10,49,35,14,66
 2016,Southampton,6,38,18,9,11,59,41,18,63
 2016,West Ham,7,38,16,14,8,65,51,14,62
 2016,Liverpool,8,38,16,12,10,63,50,13,60
@@ -482,7 +482,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2016,Crystal Palace,15,38,11,9,18,39,51,-12,42
 2016,Bournemouth,16,38,11,9,18,45,67,-22,42
 2016,Sunderland,17,38,9,12,17,48,62,-14,39
-2016,Newcastle Utd,18,38,9,10,19,44,65,-21,37
+2016,Newcastle United,18,38,9,10,19,44,65,-21,37
 2016,Norwich City,19,38,9,7,22,39,67,-28,34
 2016,Aston Villa,20,38,3,8,27,27,76,-49,17
 2017,Chelsea,1,38,30,3,5,85,33,52,93
@@ -490,7 +490,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2017,Manchester City,3,38,23,9,6,80,39,41,78
 2017,Liverpool,4,38,22,10,6,78,42,36,76
 2017,Arsenal,5,38,23,6,9,77,44,33,75
-2017,Manchester Utd,6,38,18,15,5,54,29,25,69
+2017,Manchester United,6,38,18,15,5,54,29,25,69
 2017,Everton,7,38,17,10,11,62,44,18,61
 2017,Southampton,8,38,12,10,16,41,48,-7,46
 2017,Bournemouth,9,38,12,10,16,55,67,-12,46
@@ -506,7 +506,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2017,Middlesbrough,19,38,5,13,20,27,53,-26,28
 2017,Sunderland,20,38,6,6,26,29,69,-40,24
 2018,Manchester City,1,38,32,4,2,106,27,79,100
-2018,Manchester Utd,2,38,25,6,7,68,28,40,81
+2018,Manchester United,2,38,25,6,7,68,28,40,81
 2018,Tottenham,3,38,23,8,7,74,36,38,77
 2018,Liverpool,4,38,21,12,5,84,38,46,75
 2018,Chelsea,5,38,21,7,10,62,38,24,70
@@ -514,7 +514,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2018,Burnley,7,38,14,12,12,36,39,-3,54
 2018,Everton,8,38,13,10,15,44,58,-14,49
 2018,Leicester City,9,38,12,11,15,56,60,-4,47
-2018,Newcastle Utd,10,38,12,8,18,39,47,-8,44
+2018,Newcastle United,10,38,12,8,18,39,47,-8,44
 2018,Crystal Palace,11,38,11,11,16,45,55,-10,44
 2018,Bournemouth,12,38,11,11,16,45,61,-16,44
 2018,West Ham,13,38,10,12,16,48,68,-20,42
@@ -530,14 +530,14 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2019,Chelsea,3,38,21,9,8,63,39,24,72
 2019,Tottenham,4,38,23,2,13,67,39,28,71
 2019,Arsenal,5,38,21,7,10,73,51,22,70
-2019,Manchester Utd,6,38,19,9,10,65,54,11,66
+2019,Manchester United,6,38,19,9,10,65,54,11,66
 2019,Wolves,7,38,16,9,13,47,46,1,57
 2019,Everton,8,38,15,9,14,54,46,8,54
 2019,Leicester City,9,38,15,7,16,51,48,3,52
 2019,West Ham,10,38,15,7,16,52,55,-3,52
 2019,Watford,11,38,14,8,16,52,59,-7,50
 2019,Crystal Palace,12,38,14,7,17,51,53,-2,49
-2019,Newcastle Utd,13,38,12,9,17,42,48,-6,45
+2019,Newcastle United,13,38,12,9,17,42,48,-6,45
 2019,Bournemouth,14,38,13,6,19,56,70,-14,45
 2019,Burnley,15,38,11,7,20,45,68,-23,40
 2019,Southampton,16,38,9,12,17,45,65,-20,39
@@ -547,7 +547,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2019,Huddersfield,20,38,3,7,28,22,76,-54,16
 2020,Liverpool,1,38,32,3,3,85,33,52,99
 2020,Manchester City,2,38,26,3,9,102,35,67,81
-2020,Manchester Utd,3,38,18,12,8,66,36,30,66
+2020,Manchester United,3,38,18,12,8,66,36,30,66
 2020,Chelsea,4,38,20,6,12,69,54,15,66
 2020,Leicester City,5,38,18,8,12,67,41,26,62
 2020,Tottenham,6,38,16,11,11,61,47,14,59
@@ -557,7 +557,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2020,Burnley,10,38,15,9,14,43,50,-7,54
 2020,Southampton,11,38,15,7,16,51,60,-9,52
 2020,Everton,12,38,13,10,15,44,56,-12,49
-2020,Newcastle Utd,13,38,11,11,16,38,58,-20,44
+2020,Newcastle United,13,38,11,11,16,38,58,-20,44
 2020,Crystal Palace,14,38,11,10,17,31,50,-19,43
 2020,Brighton,15,38,9,14,15,39,54,-15,41
 2020,West Ham,16,38,10,9,19,49,62,-13,39
@@ -566,7 +566,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2020,Watford,19,38,8,10,20,36,64,-28,34
 2020,Norwich City,20,38,5,6,27,26,75,-49,21
 2021,Manchester City,1,38,27,5,6,83,32,51,86
-2021,Manchester Utd,2,38,21,11,6,73,44,29,74
+2021,Manchester United,2,38,21,11,6,73,44,29,74
 2021,Liverpool,3,38,20,9,9,68,42,26,69
 2021,Chelsea,4,38,19,10,9,58,36,22,67
 2021,Leicester City,5,38,20,6,12,68,50,18,66
@@ -576,7 +576,7 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2021,Leeds United,9,38,18,5,15,62,54,8,59
 2021,Everton,10,38,17,8,13,47,48,-1,59
 2021,Aston Villa,11,38,16,7,15,55,46,9,55
-2021,Newcastle Utd,12,38,12,9,17,46,62,-16,45
+2021,Newcastle United,12,38,12,9,17,46,62,-16,45
 2021,Wolves,13,38,12,9,17,36,52,-16,45
 2021,Crystal Palace,14,38,12,8,18,41,66,-25,44
 2021,Southampton,15,38,12,7,19,47,68,-21,43
@@ -590,12 +590,12 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2022,Chelsea,3,38,21,11,6,76,33,43,74
 2022,Tottenham,4,38,22,5,11,69,40,29,71
 2022,Arsenal,5,38,22,3,13,61,48,13,69
-2022,Manchester Utd,6,38,16,10,12,57,57,0,58
+2022,Manchester United,6,38,16,10,12,57,57,0,58
 2022,West Ham,7,38,16,8,14,60,51,9,56
 2022,Leicester City,8,38,14,10,14,62,59,3,52
 2022,Brighton,9,38,12,15,11,42,44,-2,51
 2022,Wolves,10,38,15,6,17,38,43,-5,51
-2022,Newcastle Utd,11,38,13,10,15,44,62,-18,49
+2022,Newcastle United,11,38,13,10,15,44,62,-18,49
 2022,Crystal Palace,12,38,11,15,12,50,46,4,48
 2022,Brentford,13,38,13,7,18,48,56,-8,46
 2022,Aston Villa,14,38,13,6,19,52,54,-2,45
@@ -607,8 +607,8 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2022,Norwich City,20,38,5,7,26,23,84,-61,22
 2023,Manchester City,1,38,28,5,5,94,33,61,89
 2023,Arsenal,2,38,26,6,6,88,43,45,84
-2023,Manchester Utd,3,38,23,6,9,58,43,15,75
-2023,Newcastle Utd,4,38,19,14,5,68,33,35,71
+2023,Manchester United,3,38,23,6,9,58,43,15,75
+2023,Newcastle United,4,38,19,14,5,68,33,35,71
 2023,Liverpool,5,38,19,10,9,75,47,28,67
 2023,Brighton,6,38,18,8,12,72,53,19,62
 2023,Aston Villa,7,38,18,7,13,51,46,5,61
@@ -631,8 +631,8 @@ season_end_year,team,position,played,won,drawn,lost,gf,ga,gd,points
 2024,Aston Villa,4,38,20,8,10,76,61,15,68
 2024,Tottenham,5,38,20,6,12,74,61,13,66
 2024,Chelsea,6,38,18,9,11,77,63,14,63
-2024,Newcastle Utd,7,38,18,6,14,85,62,23,60
-2024,Manchester Utd,8,38,18,6,14,57,58,-1,60
+2024,Newcastle United,7,38,18,6,14,85,62,23,60
+2024,Manchester United,8,38,18,6,14,57,58,-1,60
 2024,West Ham,9,38,14,10,14,60,74,-14,52
 2024,Crystal Palace,10,38,13,10,15,57,58,-1,49
 2024,Brighton,11,38,12,12,14,55,62,-7,48

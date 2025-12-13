@@ -478,9 +478,9 @@ webui = """
         grid.innerHTML = data.rows.map((row,index)=>`
           <div class="stat-card team-card" data-team-id="${row.team_id||''}" data-team-name="${row.team||''}">
             <div class="table-head">#${row.position || index+1} · ${row.team}</div>
-            <div class="pill" style="margin:8px 0">Points ${row.points}</div>
-            <div class="muted">Played ${row.played} | W${row.won} D${row.drawn} L${row.lost}</div>
-            <div class="muted">GF ${row.gf} GA ${row.ga} GD ${row.gd}</div>
+            <div class="pill" style="margin:8px 0">积分 ${row.points}</div>
+            <div class="muted">场次 ${row.played} | 胜${row.won} 平${row.drawn} 负${row.lost}</div>
+            <div class="muted">进球 ${row.gf} 失球 ${row.ga} 净胜球 ${row.gd}</div>
           </div>
         `).join('');
         grid.querySelectorAll('.team-card').forEach(card=>{
