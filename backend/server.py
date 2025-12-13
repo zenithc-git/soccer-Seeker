@@ -8,6 +8,51 @@ from core.db.models import User, Season, Team, TeamSeasonStats
 
 app = Flask(__name__)
 
+# 新增：球队历年数据API
+@app.route("/api/team_stats", methods=["GET"])
+def api_team_stats():
+    """
+    查询参数：team_id 或 team_name（二选一，推荐用 team_id）
+    返回该队所有赛季的排名、进球、失球、净胜球数据，按赛季升序排列
+    """
+    team_id = request.args.get("team_id", type=int)
+    team_name = request.args.get("team_name", type=str)
+    if not team_id and not team_name:
+        return jsonify({"error": "missing team_id or team_name"}), 400
+
+    session = SessionLocal()
+    try:
+        if team_id:
+            team = session.query(Team).filter_by(id=team_id).first()
+        else:
+            team = session.query(Team).filter_by(name=team_name).first()
+        if not team:
+            return jsonify({"error": "team not found"}), 404
+
+        # 查找该队所有赛季的统计
+        stats = (
+            session.query(TeamSeasonStats, Season)
+            .join(Season, TeamSeasonStats.season_id == Season.id)
+            .filter(TeamSeasonStats.team_id == team.id)
+            .order_by(Season.end_year.asc())
+            .all()
+        )
+        result = []
+        for st, season in stats:
+            result.append({
+                "season": season.end_year,
+                "position": st.position,
+                "gf": st.gf,
+                "ga": st.ga,
+                "gd": st.gd
+            })
+        return jsonify({
+            "team": team.name,
+            "stats": result
+        })
+    finally:
+        session.close()
+
 # Simple in-memory token store: token -> user_id
 TOKENS = {}
 

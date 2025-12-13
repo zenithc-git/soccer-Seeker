@@ -64,6 +64,24 @@ webui = """
         <div id="otherBoardsStatus" class="muted" style="margin-top:10px">等待请求...</div>
         <div id="otherBoards" class="boards-grid"></div>
       </div>
+      
+        <div class="card" id="teamStatsCard">
+          <div class="section-head">
+            <div>
+              <h2>球队历年数据可视化</h2>
+              <p class="muted">选择球队，查看其历年排名、进球、失球、净胜球折线图</p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <select id="teamSelect" style="padding:9px 10px;border-radius:8px;border:1px solid #cbd5e1;min-width:160px"></select>
+              <button id="loadTeamStatsBtn" class="btn">显示球队数据</button>
+            </div>
+          </div>
+          <div id="teamStatsStatus" class="muted" style="margin-top:10px">等待选择球队...</div>
+          <div id="teamCharts" style="width:100%;max-width:900px;margin:0 auto">
+            <div id="rankChart" style="height:320px;margin-bottom:24px;"></div>
+            <div id="statsChart" style="height:320px;"></div>
+          </div>
+        </div>
 
       <div class="card">
         <h3>账户与用户操作</h3>
@@ -122,6 +140,108 @@ webui = """
     </div>
 
     <script>
+      // 引入 ECharts CDN
+      const echartsScript = document.createElement('script');
+      echartsScript.src = 'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js';
+      document.head.appendChild(echartsScript);
+
+      // 加载所有球队列表
+      async function loadTeams(){
+        const token = requireAuth();
+        if(!token){
+          document.getElementById('teamStatsStatus').textContent = '需登录后查看球队数据';
+          return;
+        }
+        const select = document.getElementById('teamSelect');
+        select.innerHTML = '';
+        try{
+          // 复用 standings API 拿到所有球队
+          const season = document.getElementById('seasonSelect').value;
+          if(!season){
+            document.getElementById('teamStatsStatus').textContent = '请先选择赛季';
+            return;
+          }
+          const res = await fetch(`/api/standings?season=${encodeURIComponent(season)}&type=points`,{headers:{'Authorization':`Bearer ${token}`}});
+          const data = await res.json();
+          if(!res.ok || !data.rows){
+            document.getElementById('teamStatsStatus').textContent = '获取球队失败: '+(data.error||res.status);
+            return;
+          }
+          data.rows.forEach(row=>{
+            const opt = document.createElement('option');
+            opt.value = row.team;
+            opt.textContent = row.team;
+            select.appendChild(opt);
+          });
+        }catch(e){
+          document.getElementById('teamStatsStatus').textContent = '网络错误: '+e;
+        }
+      }
+
+      // 加载并绘制球队历年数据
+      async function loadTeamStats(){
+        const token = requireAuth();
+        if(!token){
+          document.getElementById('teamStatsStatus').textContent = '需登录后查看球队数据';
+          return;
+        }
+        const teamName = document.getElementById('teamSelect').value;
+        if(!teamName){
+          document.getElementById('teamStatsStatus').textContent = '请先选择球队';
+          return;
+        }
+        document.getElementById('teamStatsStatus').textContent = '加载中...';
+        try{
+          const res = await fetch(`/api/team_stats?team_name=${encodeURIComponent(teamName)}`,{headers:{'Authorization':`Bearer ${token}`}});
+          const data = await res.json();
+          if(!res.ok || !data.stats){
+            document.getElementById('teamStatsStatus').textContent = '获取失败: '+(data.error||res.status);
+            return;
+          }
+          document.getElementById('teamStatsStatus').textContent = `已加载 ${data.team} 的历年数据，共 ${data.stats.length} 赛季`;
+          drawTeamCharts(data);
+        }catch(e){
+          document.getElementById('teamStatsStatus').textContent = '网络错误: '+e;
+        }
+      }
+
+      // 绘制球队折线图
+      function drawTeamCharts(data){
+        if(!window.echarts){ setTimeout(()=>drawTeamCharts(data), 300); return; }
+        const seasons = data.stats.map(s=>s.season);
+        const ranks = data.stats.map(s=>s.position);
+        const gf = data.stats.map(s=>s.gf);
+        const ga = data.stats.map(s=>s.ga);
+        const gd = data.stats.map(s=>s.gd);
+
+        // 排名折线图（纵坐标反向）
+        const rankChart = echarts.init(document.getElementById('rankChart'));
+        rankChart.setOption({
+          title: { text: `${data.team} 历年排名`, left:'center' },
+          tooltip: { trigger: 'axis' },
+          xAxis: { type: 'category', data: seasons, name: '赛季' },
+          yAxis: { type: 'value', name: '排名', inverse: true, min: Math.min(...ranks), max: Math.max(...ranks) },
+          series: [{ name: '排名', type: 'line', data: ranks, smooth: true, symbol: 'circle', lineStyle:{width:3}, itemStyle:{color:'#1976d2'} }]
+        });
+
+        // 进球/失球/净胜球折线图
+        const statsChart = echarts.init(document.getElementById('statsChart'));
+        statsChart.setOption({
+          title: { text: `${data.team} 历年进球/失球/净胜球`, left:'center' },
+          tooltip: { trigger: 'axis' },
+          legend: { data: ['进球','失球','净胜球'], top: 30 },
+          xAxis: { type: 'category', data: seasons, name: '赛季' },
+          yAxis: { type: 'value', name: '数量' },
+          series: [
+            { name: '进球', type: 'line', data: gf, smooth: true, symbol: 'circle', lineStyle:{width:2}, itemStyle:{color:'#43a047'} },
+            { name: '失球', type: 'line', data: ga, smooth: true, symbol: 'circle', lineStyle:{width:2}, itemStyle:{color:'#e53935'} },
+            { name: '净胜球', type: 'line', data: gd, smooth: true, symbol: 'circle', lineStyle:{width:2}, itemStyle:{color:'#fbc02d'} }
+          ]
+        });
+      }
+
+      document.getElementById('loadTeamStatsBtn').addEventListener('click', loadTeamStats);
+      document.getElementById('seasonSelect').addEventListener('change', loadTeams);
     // --- Modal helpers ---
     function showBackdrop(id){document.getElementById(id).style.display='flex'}
     function hideBackdrop(id){document.getElementById(id).style.display='none'}
@@ -397,6 +517,7 @@ webui = """
       await loadSeasons();
       refreshBoards();
       syncAuthUI();
+    await loadTeams();
     })
     </script>
     """
