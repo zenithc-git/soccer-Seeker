@@ -32,7 +32,7 @@ webui = """
       <h1 style="color:#fff;margin-bottom:14px">Premier League 数据系统</h1>
       <p style="color:#e3f2fd;margin-bottom:18px">快速查看赛季积分榜；主榜按积分，其余按进球/丢球/净胜。</p>
 
-      <div class="card">
+      <div class="card" id="standingsCard">
         <div class="section-head">
           <div>
             <h2>积分榜查询</h2>
@@ -47,7 +47,7 @@ webui = """
         <div id="standingsGrid" class="standings-grid"></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="otherBoardsCard">
         <div class="section-head">
           <div>
             <h2>进球 / 丢球 / 净胜 榜</h2>
@@ -67,7 +67,7 @@ webui = """
 
       <div class="card">
         <h3>账户与用户操作</h3>
-        <div style="margin:8px 0">
+        <div style="margin:8px 0" id="authActions">
           <button id="openChoice" class="btn">开始（选择 注册/登录 ）</button>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
@@ -166,6 +166,27 @@ webui = """
             window.location.reload();
         }catch(e){ alert('网络错误: '+e) }
     })
+
+    // 登录/登出按钮显示控制
+    function syncAuthUI(){
+      const token = localStorage.getItem('token');
+      const authActions = document.getElementById('authActions');
+      const logoutBtn = document.getElementById('logoutBtn');
+      if(token){
+        authActions.style.display = 'none';
+        logoutBtn.style.display = '';
+      }else{
+        authActions.style.display = '';
+        logoutBtn.style.display = '';
+      }
+    }
+
+    function setDataVisibility(show){
+      const standingsCard = document.getElementById('standingsCard');
+      const otherBoardsCard = document.getElementById('otherBoardsCard');
+      standingsCard.style.display = show ? '' : 'none';
+      otherBoardsCard.style.display = show ? '' : 'none';
+    }
 
     // 简易授权获取（带抑制重复弹窗）
     let authPrompted = false;
@@ -367,11 +388,15 @@ webui = """
       if(!token){
         document.getElementById('standingsStatus').textContent = '需登录后查看积分榜';
         document.getElementById('otherBoardsStatus').textContent = '需登录后查看其他榜';
+        setDataVisibility(false);
         showBackdrop('choiceBackdrop');
+        syncAuthUI();
         return;
       }
+      setDataVisibility(true);
       await loadSeasons();
       refreshBoards();
+      syncAuthUI();
     })
     </script>
     """
