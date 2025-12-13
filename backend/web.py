@@ -90,6 +90,7 @@ webui = """
         const birthday = document.getElementById('reg_birthday').value.trim()
         const role = document.getElementById('reg_role').value.trim()
         if (!name || !email || !password){ alert('请填写用户名、邮箱和密码'); return }
+        if (role && !['user','vip_user','admin'].includes(role)){ alert('角色只能是 user、vip_user 或 admin'); return }
         try{
             const res = await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password,birthday,role})})
             const data = await res.json()
@@ -141,9 +142,9 @@ webui = """
             }
 
             // 4. 成功：展示用户信息（可以自定义展示方式，比如弹窗/页面渲染）
-            alert('当前用户信息：' + JSON.stringify(data, null, 2));
+            // alert('当前用户信息：' + JSON.stringify(data, null, 2));
             // （可选）也可以把信息渲染到页面上，比如：
-            // document.getElementById('userInfoDisplay').innerText = JSON.stringify(data, null, 2);
+            document.getElementById('userInfoDisplay').innerText = JSON.stringify(data, null, 2);
         } catch (e) {
             alert('网络请求错误: ' + e.message);
         }
@@ -166,10 +167,7 @@ webui = """
             return;
         }
         try {
-            const res = await fetch('/api/users', {
-                method: 'GET',
-                headers: { "Authorization": `Bearer ${token}` } // 必须带Token
-            });
+            const res = await fetch('/api/users', {method: 'GET',headers: { "Authorization": `Bearer ${token}` }});
             const data = await res.json();
             if (!res.ok) {
                 alert('请求失败: ' + (data.error || '未知错误'));
