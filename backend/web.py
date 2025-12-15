@@ -11,6 +11,10 @@ webui = """
       .bg-noise{position:absolute;inset:0;background-image:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABqUlEQVR4Ae3WTWgTURTG8d+5aZVKsWotRFEYRaL2CgoGVTBooYBWYp5BrRSJgoJoRCsM6iGNFQSC9gi0UFIQLSByiAUUrZKIiIx9H2+0ed6duLN0b3uZO88I+cc7/s6c87/OQJpYqmqMjo7rUwLDsBh2bjx0aNqzpvhrbcZ2eF5UL+e2zEqbcnTkz5nUnf+gz9ClHq1C84EBgbZyRy9EFcQpdgmfsLNtrZzLeKPKP2Iz5cr6ODcFrxvY4a1yZHB6muLLWmE8M+BtNtEsXULtT6dw1qWNch8G7HEbTsl2MAkFRKNYtXLS8E+DEo1CSG36E5KcVl+rcz7q8B6JJb+/pQqhUTzVGqIgaPg4LhwHu0YHcBzpAPyPvMTfi6XjC8d6sl8zqZIlYpbA7rW52YGxT6muL98ilMjaOYm2kOVBz0+mWUX4oMO3jsKK/OFQn1fMrlzlGykWEn7BfoYg/es+QFwGYjj+5B4FqkHEyxNRuELonV1K0mp0D6ItZYttDW0PuNY1/XbtJY6LszIZjph4pTsw0aIT90XKsiHgDvnp/W2gF3jBnxr7AkRE0UvZ15/QAAAABJRU5ErkJggg==');opacity:0.16}
       .page{max-width:1100px;margin:0 auto;padding:28px 20px 64px;position:relative;z-index:1}
       .card{background:rgba(255,255,255,0.9);border-radius:14px;padding:18px 20px;box-shadow:0 12px 34px rgba(0,0,0,0.12);margin-bottom:18px;border:1px solid rgba(226,232,240,0.6);backdrop-filter:blur(4px)}
+      .bg-controls{position:fixed;top:14px;right:14px;z-index:1500;display:flex;gap:6px;pointer-events:auto}
+      .bg-btn{padding:8px 10px;border:none;border-radius:10px;background:rgba(255,255,255,0.72);color:#0f172a;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,0.12);backdrop-filter:blur(6px);transition:transform .12s ease,box-shadow .12s ease}
+      .bg-btn:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(0,0,0,0.16)}
+      .bg-btn:active{transform:translateY(0)}
       .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#e3f2fd;color:#0d47a1;font-size:12px;font-weight:bold}
       .btn{padding:9px 14px;border:none;border-radius:8px;background:#1976d2;color:#fff;cursor:pointer;font-weight:bold;transition:transform .12s ease,box-shadow .12s ease}
       .btn.secondary{background:#6c757d}
@@ -76,11 +80,15 @@ webui = """
       <div class="bg-overlay"></div>
       <div class="bg-noise"></div>
     </div>
+    <div class="bg-controls">
+      <button id="bgPrevBtn" class="bg-btn">上一张</button>
+      <button id="bgNextBtn" class="bg-btn">下一张</button>
+    </div>
 
     <div class="page">
       <div class="top-bar">
         <div>
-          <h1 style="color:#fff;margin-bottom:6px">Premier League 数据系统</h1>
+          <h1 style="color:#fff;margin-bottom:6px">Soccer-Seeker EPL 数据系统</h1>
           <p style="color:#e3f2fd;margin-bottom:6px">快速查看赛季积分榜；主榜按积分，其余按进球/丢球/净胜。</p>
         </div>
         <div id="userBadge" class="user-chip" title="查看账号信息">
@@ -276,30 +284,50 @@ webui = """
       let bgIndex = 0;
       let bgTimer = null;
       let reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let bgInitialized = false;
+      let bgActiveLayer = null;
 
       function setBg(layerEl, url){
+        if(!layerEl) return;
         layerEl.style.backgroundImage = `url(${url})`;
       }
 
-      function startBgCarousel(){
+      function initBackground(){
         const layer1 = document.getElementById('bg1');
         const layer2 = document.getElementById('bg2');
         if(!layer1 || !layer2 || BACKGROUND_IMAGES.length===0) return;
+        if(bgInitialized) return;
         setBg(layer1, BACKGROUND_IMAGES[0]);
         layer1.classList.add('active');
-        if(BACKGROUND_IMAGES.length===1 || reduceMotion){
-          return; // 单张或减少动画时不轮播
+        bgActiveLayer = layer1;
+        bgIndex = 0;
+        bgInitialized = true;
+      }
+
+      function showBackgroundAt(idx){
+        initBackground();
+        if(!bgInitialized || BACKGROUND_IMAGES.length===0) return;
+        const total = BACKGROUND_IMAGES.length;
+        const target = ((idx % total) + total) % total;
+        if(target === bgIndex) return;
+        const layer1 = document.getElementById('bg1');
+        const layer2 = document.getElementById('bg2');
+        const incoming = (bgActiveLayer === layer1) ? layer2 : layer1;
+        setBg(incoming, BACKGROUND_IMAGES[target]);
+        incoming.classList.add('active');
+        if(bgActiveLayer){
+          bgActiveLayer.classList.remove('active');
         }
-        bgIndex = 1;
+        bgActiveLayer = incoming;
+        bgIndex = target;
+      }
+
+      function startBgCarousel(){
+        initBackground();
+        if(reduceMotion || BACKGROUND_IMAGES.length <= 1) return;
+        stopBgCarousel();
         bgTimer = setInterval(()=>{
-          const nextUrl = BACKGROUND_IMAGES[bgIndex % BACKGROUND_IMAGES.length];
-          const showFirst = bgIndex % 2 === 0;
-          const entering = showFirst ? layer1 : layer2;
-          const leaving = showFirst ? layer2 : layer1;
-          setBg(entering, nextUrl);
-          entering.classList.add('active');
-          leaving.classList.remove('active');
-          bgIndex += 1;
+          showBackgroundAt(bgIndex + 1);
         }, BACKGROUND_INTERVAL_MS);
       }
 
@@ -989,7 +1017,17 @@ webui = """
     document.getElementById('playerDetailClose').addEventListener('click', hidePlayerModal);
     document.getElementById('playerDetailBackdrop').addEventListener('click', function(e){ if(e.target.id === 'playerDetailBackdrop') hidePlayerModal(); });
 
-    document.getElementById('loadStandingsBtn').addEventListener('click', fetchStandings);
+      document.getElementById('loadStandingsBtn').addEventListener('click', fetchStandings);
+      document.getElementById('bgPrevBtn').addEventListener('click', function(){
+        stopBgCarousel();
+        showBackgroundAt(bgIndex - 1);
+        if(!reduceMotion){ startBgCarousel(); }
+      });
+      document.getElementById('bgNextBtn').addEventListener('click', function(){
+        stopBgCarousel();
+        showBackgroundAt(bgIndex + 1);
+        if(!reduceMotion){ startBgCarousel(); }
+      });
 
     // 初始加载：直接预取赛季与榜单（无需登录？
     window.addEventListener('load', async function(){ 
