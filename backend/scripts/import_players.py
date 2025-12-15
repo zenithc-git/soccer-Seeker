@@ -18,7 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from backend.core.db import Base, SessionLocal, engine
 from backend.core.db.models import Team, Player  # noqa: E402
 
-DATA_FILE = PROJECT_ROOT / "data" / "epl_players_23_24(1).csv"
+DATA_FILE = PROJECT_ROOT / "data" / "epl_players_23_24.csv"
 
 
 def parse_date(raw: str):
@@ -60,7 +60,7 @@ def import_players(reset: bool = True):
     seen_keys = set()  # (team_id, first, last, shirt_no)
     try:
         with DATA_FILE.open(newline="", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f, delimiter="\t")
+            reader = csv.DictReader(f, delimiter=",")
             for row in reader:
                 if not row or not row.get("teamID"):
                     skipped += 1

@@ -1,13 +1,19 @@
 # backend/server.py
 import secrets
+import os
+from pathlib import Path
 
 from flask import Flask, jsonify, request
+from flask import send_from_directory
 from web import webui
 
 from core.db import SessionLocal
 from core.db.models import User, Season, Team, TeamSeasonStats, Player
 
 app = Flask(__name__)
+BASE_DIR = Path(__file__).resolve().parent
+AVATAR_DIR = BASE_DIR / "uploads" / "avatars"
+AVATAR_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_players_for_team(session, team_id: int):
@@ -35,10 +41,11 @@ def get_players_for_team(session, team_id: int):
 TOKENS = {}
 
 
-def get_auth_user():
+def get_auth_user(return_session: bool = False):
     """
     Resolve current user from Authorization header.
     Returns None if missing/invalid.
+    When return_session=True, returns (user, session) and caller must close.
     """
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
@@ -48,10 +55,11 @@ def get_auth_user():
     if not user_id:
         return None
     session = SessionLocal()
-    try:
-        return session.query(User).get(user_id)
-    finally:
-        session.close()
+    user = session.query(User).get(user_id)
+    if return_session:
+        return user, session
+    session.close()
+    return user
 
 
 # 新增：球队历年数据API
@@ -108,6 +116,72 @@ def api_team_stats():
 @app.route("/")
 def home():
     return webui
+
+@app.route("/avatars/<path:filename>")
+def serve_avatar(filename):
+    """Serve uploaded avatars."""
+    return send_from_directory(AVATAR_DIR, filename)
+
+
+# 上传头像
+@app.route("/api/me/avatar", methods=["POST"])
+def api_update_avatar():
+    auth = get_auth_user(return_session=True)
+    if not auth:
+        return jsonify({"error": "missing or invalid token"}), 401
+    user, session = auth
+    try:
+        if not user:
+            return jsonify({"error": "user not found"}), 404
+        if "avatar" not in request.files:
+            return jsonify({"error": "missing file field 'avatar'"}), 400
+        file = request.files["avatar"]
+        if file.filename == "":
+            return jsonify({"error": "empty filename"}), 400
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext not in (".png", ".jpg", ".jpeg", ".gif", ".webp"):
+            return jsonify({"error": "unsupported file type"}), 400
+        filename = f"{user.id}_{secrets.token_hex(8)}{ext}"
+        filepath = AVATAR_DIR / filename
+        file.save(filepath)
+
+        # 删除旧头像文件（仅限本目录）
+        if user.avatar_url and user.avatar_url.startswith("/avatars/"):
+            old_name = user.avatar_url.split("/avatars/", 1)[-1]
+            old_path = AVATAR_DIR / old_name
+            if old_path.exists():
+                try:
+                    old_path.unlink()
+                except OSError:
+                    pass
+
+        user.avatar_url = f"/avatars/{filename}"
+        session.commit()
+        return jsonify({"msg": "avatar updated", "avatar_url": user.avatar_url})
+    finally:
+        session.close()
+
+
+# 修改密码
+@app.route("/api/me/password", methods=["POST"])
+def api_update_password():
+    auth = get_auth_user(return_session=True)
+    if not auth:
+        return jsonify({"error": "missing or invalid token"}), 401
+    user, session = auth
+    data = request.json or {}
+    old_password = data.get("old_password")
+    new_password = data.get("new_password")
+    if not old_password or not new_password:
+        return jsonify({"error": "old_password and new_password required"}), 400
+    if user.password != old_password:
+        return jsonify({"error": "old password mismatch"}), 403
+    try:
+        user.password = new_password
+        session.commit()
+        return jsonify({"msg": "password updated"})
+    finally:
+        session.close()
 
 # 测试用：检查服务器是否正常
 @app.route("/ping")
@@ -309,6 +383,7 @@ def api_register():
                 "name": user.name,
                 "email": user.email,
                 "role": user.role,
+                "avatar_url": user.avatar_url,
             }
         }), 201
     finally:
@@ -377,7 +452,17 @@ def api_login():
         token = secrets.token_hex(16)
         TOKENS[token] = user.id
 
-        return jsonify({"msg": "login successful", "token": token, "user": {"id": user.id, "name": user.name, "email": user.email, "role": user.role}})
+        return jsonify({
+            "msg": "login successful",
+            "token": token,
+            "user": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "role": user.role,
+                "avatar_url": user.avatar_url,
+            }
+        })
     finally:
         session.close()
 
@@ -400,7 +485,13 @@ def api_me():
         user = session.query(User).get(user_id)
         if not user:
             return jsonify({"error": "user not found"}), 404
-        return jsonify({"id": user.id, "name": user.name, "email": user.email, "role": user.role})
+        return jsonify({
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role,
+            "avatar_url": user.avatar_url,
+        })
     finally:
         session.close()
 

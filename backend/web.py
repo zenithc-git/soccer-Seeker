@@ -33,6 +33,14 @@ webui = """
       .player-chip{background:#e3f2fd;border-radius:10px;padding:8px 10px;color:#0d47a1;font-weight:600}
       .team-modal{max-width:760px;width:95%}
       .badge{display:inline-block;padding:6px 10px;border-radius:10px;font-weight:bold;font-size:12px;background:#e2e8f0;color:#0f172a;margin-right:6px}
+      .top-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+      .user-chip{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:999px;background:#e3f2fd;color:#0d47a1;cursor:pointer;border:1px solid #cbd5e1;box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+      .avatar{width:42px;height:42px;border-radius:50%;background:#0d47a1;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;overflow:hidden}
+      .avatar img{width:100%;height:100%;object-fit:cover}
+      .user-meta{display:flex;flex-direction:column;line-height:1.2}
+      .user-meta .role{font-size:12px;color:#475569}
+      .user-modal{max-width:520px}
+      .user-modal .row label{display:block;margin-bottom:4px;color:#475569;font-size:13px}
       @media(max-width:600px){
         .btn{width:100%}
         .section-head{flex-direction:column;align-items:flex-start}
@@ -40,8 +48,19 @@ webui = """
     </style>
 
     <div class="page">
-      <h1 style="color:#fff;margin-bottom:14px">Premier League 数据系统</h1>
-      <p style="color:#e3f2fd;margin-bottom:18px">快速查看赛季积分榜；主榜按积分，其余按进球/丢球/净胜。</p>
+      <div class="top-bar">
+        <div>
+          <h1 style="color:#fff;margin-bottom:6px">Premier League 数据系统</h1>
+          <p style="color:#e3f2fd;margin-bottom:6px">快速查看赛季积分榜；主榜按积分，其余按进球/丢球/净胜。</p>
+        </div>
+        <div id="userBadge" class="user-chip" title="查看账号信息">
+          <div class="avatar" id="userBadgeAvatar">G</div>
+          <div class="user-meta">
+            <span id="userBadgeName">访客</span>
+            <span class="role" id="userBadgeRole">未登录</span>
+          </div>
+        </div>
+      </div>
 
       <div class="card" id="standingsCard">
         <div class="section-head">
@@ -160,6 +179,35 @@ webui = """
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
           <button id="login_cancel" class="btn secondary">取消</button>
           <button id="login_submit" class="btn">提交</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- User info modal -->
+    <div id="userModal" class="modal-backdrop">
+      <div class="modal user-modal">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div class="avatar" id="userModalAvatar">U</div>
+          <div>
+            <h3 id="userModalName" style="margin:0"></h3>
+            <div class="muted" id="userModalEmail"></div>
+            <div class="pill" id="userModalRole">role</div>
+          </div>
+        </div>
+        <div class="row">
+          <label>更换头像</label>
+          <input type="file" id="avatarFile" accept="image/*">
+          <button id="uploadAvatarBtn" class="btn" style="margin-top:8px">上传头像</button>
+        </div>
+        <div class="row">
+          <label>修改密码</label>
+          <input id="oldPwdInput" type="password" placeholder="当前密码">
+          <input id="newPwdInput" type="password" placeholder="新密码">
+          <button id="changePwdBtn" class="btn secondary" style="margin-top:8px">更新密码</button>
+        </div>
+        <div id="userModalStatus" class="muted" style="margin-top:8px"></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+          <button id="userModalClose" class="btn secondary">关闭</button>
         </div>
       </div>
     </div>
@@ -331,6 +379,13 @@ webui = """
         }catch(e){ alert('网络错误: '+e) }
     })
 
+    // User badge + modal
+    document.getElementById('userBadge').addEventListener('click', openUserModal);
+    document.getElementById('userModalClose').addEventListener('click', function(){ hideBackdrop('userModal') });
+    document.getElementById('userModal').addEventListener('click', function(e){ if(e.target.id === 'userModal') hideBackdrop('userModal'); });
+    document.getElementById('uploadAvatarBtn').addEventListener('click', uploadAvatar);
+    document.getElementById('changePwdBtn').addEventListener('click', changePassword);
+
     // 登录/登出按钮显示控制
     function syncAuthUI(){
       const token = localStorage.getItem('token');
@@ -343,6 +398,7 @@ webui = """
         authActions.style.display = '';
         logoutBtn.style.display = '';
       }
+      updateUserBadge();
     }
 
     let currentUser = null;
@@ -358,15 +414,35 @@ webui = """
         const data = await res.json();
         if(res.ok){
           currentUser = data;
+          updateUserBadge();
           return data;
         }
       }catch(e){}
       currentUser = null;
+      updateUserBadge();
       return null;
     }
 
     function isVipUser(){
       return currentUser && (currentUser.role === 'vip_user' || currentUser.role === 'admin');
+    }
+
+    function setAvatar(el, url, nameFallback='G'){
+      if(!el) return;
+      if(url){
+        el.innerHTML = `<img src="${url}" alt="avatar">`;
+      }else{
+        const initial = (nameFallback && nameFallback[0]) ? nameFallback[0].toUpperCase() : 'G';
+        el.textContent = initial;
+      }
+    }
+
+    function updateUserBadge(){
+      const name = currentUser?.name || '访客';
+      const role = currentUser?.role || '未登录';
+      document.getElementById('userBadgeName').textContent = name;
+      document.getElementById('userBadgeRole').textContent = role;
+      setAvatar(document.getElementById('userBadgeAvatar'), currentUser?.avatar_url, name);
     }
 
     // 简易授权获取（带抑制重复弹窗）
@@ -384,6 +460,80 @@ webui = """
         return null;
       }
       return token;
+    }
+
+    async function openUserModal(){
+      const token = localStorage.getItem('token');
+      if(!token){
+        alert('请先登录后再查看账号信息');
+        showBackdrop('choiceBackdrop');
+        return;
+      }
+      if(!currentUser){
+        await fetchCurrentUser();
+      }
+      if(!currentUser){
+        alert('无法获取用户信息，请重新登录');
+        return;
+      }
+      document.getElementById('userModalName').textContent = currentUser.name || '';
+      document.getElementById('userModalEmail').textContent = currentUser.email || '';
+      document.getElementById('userModalRole').textContent = currentUser.role || '';
+      setAvatar(document.getElementById('userModalAvatar'), currentUser.avatar_url, currentUser.name || 'U');
+      document.getElementById('userModalStatus').textContent = '';
+      showBackdrop('userModal');
+    }
+
+    async function uploadAvatar(){
+      const token = requireAuth();
+      if(!token) return;
+      const fileInput = document.getElementById('avatarFile');
+      if(!fileInput.files || fileInput.files.length === 0){
+        alert('请选择图片');
+        return;
+      }
+      const formData = new FormData();
+      formData.append('avatar', fileInput.files[0]);
+      try{
+        const res = await fetch('/api/me/avatar',{method:'POST',headers:{'Authorization':`Bearer ${token}`},body:formData});
+        const data = await res.json();
+        if(!res.ok){
+          document.getElementById('userModalStatus').textContent = data.error || '上传失败';
+          return;
+        }
+        currentUser = currentUser || {};
+        currentUser.avatar_url = data.avatar_url;
+        updateUserBadge();
+        setAvatar(document.getElementById('userModalAvatar'), data.avatar_url, currentUser.name || 'U');
+        document.getElementById('userModalStatus').textContent = '头像已更新';
+        fileInput.value = '';
+      }catch(e){
+        document.getElementById('userModalStatus').textContent = '网络错误: '+e;
+      }
+    }
+
+    async function changePassword(){
+      const token = requireAuth();
+      if(!token) return;
+      const oldPwd = document.getElementById('oldPwdInput').value;
+      const newPwd = document.getElementById('newPwdInput').value;
+      if(!oldPwd || !newPwd){
+        alert('请输入当前密码与新密码');
+        return;
+      }
+      try{
+        const res = await fetch('/api/me/password',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({old_password:oldPwd,new_password:newPwd})});
+        const data = await res.json();
+        if(!res.ok){
+          document.getElementById('userModalStatus').textContent = data.error || '修改失败';
+          return;
+        }
+        document.getElementById('userModalStatus').textContent = '密码已更新';
+        document.getElementById('oldPwdInput').value = '';
+        document.getElementById('newPwdInput').value = '';
+      }catch(e){
+        document.getElementById('userModalStatus').textContent = '网络错误: '+e;
+      }
     }
 
     // 获取当前用户信息

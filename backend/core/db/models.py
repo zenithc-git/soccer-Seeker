@@ -92,6 +92,7 @@ class User(Base):
     )
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
+    avatar_url = Column(String, nullable=True)
 
     def __repr__(self):
         return f"<User id={self.id} email={self.email} role={self.role}>"
