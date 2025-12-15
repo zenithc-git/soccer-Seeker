@@ -1,7 +1,8 @@
 #构建并插入数值
 
-python -m backend.scripts.create_db
-python -m backend.scripts.import_tables
+python backend/scripts/create_db.py
+python backend/scripts/import_tables.py
+python backend/scripts/import_players.py
 
 #网页
 python backend/server.py
