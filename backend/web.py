@@ -15,7 +15,7 @@ webui = """
       .btn{padding:9px 14px;border:none;border-radius:8px;background:#1976d2;color:#fff;cursor:pointer;font-weight:bold;transition:transform .12s ease,box-shadow .12s ease}
       .btn.secondary{background:#6c757d}
       .btn:active{transform:translateY(1px);box-shadow:0 2px 8px rgba(0,0,0,0.16)}
-      .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center}
+      .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:2000}
       .modal{background:#fff;padding:20px;border-radius:12px;max-width:420px;width:92%;box-shadow:0 6px 24px rgba(0,0,0,0.2)}
       .modal h2{margin-top:0}
       .row{margin:8px 0}
