@@ -77,6 +77,7 @@ def team_stats_plot():
 BASE_DIR = Path(__file__).resolve().parent
 AVATAR_DIR = BASE_DIR / "uploads" / "avatars"
 AVATAR_DIR.mkdir(parents=True, exist_ok=True)
+BADGE_DIR = (BASE_DIR.parent / "data" / "team_badge").resolve()
 
 
 def get_players_for_team(session, team_id: int):
@@ -309,6 +310,11 @@ def home():
 def serve_avatar(filename):
     """Serve uploaded avatars."""
     return send_from_directory(AVATAR_DIR, filename)
+
+@app.route("/badges/<path:filename>")
+def serve_badge(filename):
+    """Serve team badges stored under data/team_badge."""
+    return send_from_directory(BADGE_DIR, filename)
 
 
 # 上传头像
