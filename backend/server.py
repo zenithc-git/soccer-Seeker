@@ -327,6 +327,19 @@ def serve_wallpaper(filename):
     """Serve background wallpapers stored under data/wallpaper."""
     return send_from_directory(WALLPAPER_DIR, filename)
 
+@app.route("/api/wallpapers", methods=["GET"])
+def api_wallpapers():
+    """Return available wallpaper filenames."""
+    if not WALLPAPER_DIR.exists():
+        return jsonify({"images": []})
+    files = []
+    for name in os.listdir(WALLPAPER_DIR):
+        lower = name.lower()
+        if lower.endswith((".jpg", ".jpeg", ".png", ".webp")):
+            files.append(f"/wallpaper/{name}")
+    files.sort()
+    return jsonify({"images": files})
+
 
 # 上传头像
 @app.route("/api/me/avatar", methods=["POST"])

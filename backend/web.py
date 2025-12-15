@@ -66,6 +66,8 @@ webui = """
       .avatar img{width:100%;height:100%;object-fit:cover}
       .user-meta{display:flex;flex-direction:column;line-height:1.2}
       .user-meta .role{font-size:12px;color:#475569}
+      .brand{display:flex;align-items:center;gap:12px}
+      .brand-logo{width:54px;height:54px;object-fit:contain;border-radius:12px;background:#fff;padding:6px;box-shadow:0 6px 16px rgba(0,0,0,0.08);border:1px solid #e2e8f0}
       .user-modal{max-width:520px}
       .user-modal .row label{display:block;margin-bottom:4px;color:#475569;font-size:13px}
       @media(max-width:600px){
@@ -87,9 +89,12 @@ webui = """
 
     <div class="page">
       <div class="top-bar">
-        <div>
-          <h1 style="color:#fff;margin-bottom:6px">Soccer-Seeker EPL 数据系统</h1>
-          <p style="color:#e3f2fd;margin-bottom:6px">快速查看赛季积分榜；主榜按积分，其余按进球/丢球/净胜。</p>
+        <div class="brand">
+          <img src="/badges/Premier_League_Logo.svg.png" alt="Premier League" class="brand-logo" onerror="this.style.display='none'">
+          <div>
+            <h1 style="color:#fff;margin-bottom:6px">Soccer-Seeker EPL 数据系统</h1>
+            <p style="color:#e3f2fd;margin-bottom:6px">快速查看赛季积分榜；主榜按积分，其余按进球/丢球/净胜。</p>
+          </div>
         </div>
         <div id="userBadge" class="user-chip" title="查看账号信息">
           <div class="avatar" id="userBadgeAvatar">G</div>
@@ -276,10 +281,11 @@ webui = """
     <script>
 // 移除 ECharts CDN 引用
 
-      const BACKGROUND_IMAGES = [
+      const DEFAULT_BACKGROUNDS = [
         '/wallpaper/bg001.jpg',
         '/wallpaper/bg002.jpg'
       ];
+      let BACKGROUND_IMAGES = [];
       const BACKGROUND_INTERVAL_MS = 60000; // 默认 60s
       let bgIndex = 0;
       let bgTimer = null;
@@ -329,6 +335,20 @@ webui = """
         bgTimer = setInterval(()=>{
           showBackgroundAt(bgIndex + 1);
         }, BACKGROUND_INTERVAL_MS);
+      }
+
+      async function loadWallpapers(){
+        try{
+          const res = await fetch('/api/wallpapers');
+          const data = await res.json();
+          if(res.ok && Array.isArray(data.images) && data.images.length>0){
+            BACKGROUND_IMAGES = data.images;
+          }else{
+            BACKGROUND_IMAGES = DEFAULT_BACKGROUNDS;
+          }
+        }catch(e){
+          BACKGROUND_IMAGES = DEFAULT_BACKGROUNDS;
+        }
       }
 
       function stopBgCarousel(){
@@ -1039,6 +1059,7 @@ webui = """
       await loadSeasons();
       fetchStandings();
       await loadTeams();
+      await loadWallpapers();
       if(reduceMotion){
         stopBgCarousel();
       }else{
