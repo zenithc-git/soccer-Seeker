@@ -78,6 +78,7 @@ BASE_DIR = Path(__file__).resolve().parent
 AVATAR_DIR = BASE_DIR / "uploads" / "avatars"
 AVATAR_DIR.mkdir(parents=True, exist_ok=True)
 BADGE_DIR = (BASE_DIR.parent / "data" / "team_badge").resolve()
+WALLPAPER_DIR = (BASE_DIR.parent / "data" / "wallpaper").resolve()
 
 
 def get_players_for_team(session, team_id: int):
@@ -320,6 +321,11 @@ def serve_avatar(filename):
 def serve_badge(filename):
     """Serve team badges stored under data/team_badge."""
     return send_from_directory(BADGE_DIR, filename)
+
+@app.route("/wallpaper/<path:filename>")
+def serve_wallpaper(filename):
+    """Serve background wallpapers stored under data/wallpaper."""
+    return send_from_directory(WALLPAPER_DIR, filename)
 
 
 # 上传头像

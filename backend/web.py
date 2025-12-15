@@ -1,11 +1,16 @@
 webui = """
     <style>
       *{box-sizing:border-box}
-      body{font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#0d47a1,#1976d2);color:#0f172a;margin:0;padding:0}
+      body{font-family:Arial,Helvetica,sans-serif;background:#0b1424;color:#0f172a;margin:0;padding:0;position:relative;overflow-x:hidden}
       a{color:#0d47a1}
       h1,h2,h3,p{margin:0}
-      .page{max-width:1100px;margin:0 auto;padding:28px 20px 64px}
-      .card{background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 12px 34px rgba(0,0,0,0.12);margin-bottom:18px}
+      .bg-stage{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+      .bg-layer{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s ease;filter:saturate(0.6) blur(6px) brightness(0.7)}
+      .bg-layer.active{opacity:1}
+      .bg-overlay{position:absolute;inset:0;background:radial-gradient(120% 120% at 50% 20%,rgba(15,23,42,0.35),rgba(10,12,26,0.7));mix-blend-mode:soft-light}
+      .bg-noise{position:absolute;inset:0;background-image:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABqUlEQVR4Ae3WTWgTURTG8d+5aZVKsWotRFEYRaL2CgoGVTBooYBWYp5BrRSJgoJoRCsM6iGNFQSC9gi0UFIQLSByiAUUrZKIiIx9H2+0ed6duLN0b3uZO88I+cc7/s6c87/OQJpYqmqMjo7rUwLDsBh2bjx0aNqzpvhrbcZ2eF5UL+e2zEqbcnTkz5nUnf+gz9ClHq1C84EBgbZyRy9EFcQpdgmfsLNtrZzLeKPKP2Iz5cr6ODcFrxvY4a1yZHB6muLLWmE8M+BtNtEsXULtT6dw1qWNch8G7HEbTsl2MAkFRKNYtXLS8E+DEo1CSG36E5KcVl+rcz7q8B6JJb+/pQqhUTzVGqIgaPg4LhwHu0YHcBzpAPyPvMTfi6XjC8d6sl8zqZIlYpbA7rW52YGxT6muL98ilMjaOYm2kOVBz0+mWUX4oMO3jsKK/OFQn1fMrlzlGykWEn7BfoYg/es+QFwGYjj+5B4FqkHEyxNRuELonV1K0mp0D6ItZYttDW0PuNY1/XbtJY6LszIZjph4pTsw0aIT90XKsiHgDvnp/W2gF3jBnxr7AkRE0UvZ15/QAAAABJRU5ErkJggg==');opacity:0.16}
+      .page{max-width:1100px;margin:0 auto;padding:28px 20px 64px;position:relative;z-index:1}
+      .card{background:rgba(255,255,255,0.9);border-radius:14px;padding:18px 20px;box-shadow:0 12px 34px rgba(0,0,0,0.12);margin-bottom:18px;border:1px solid rgba(226,232,240,0.6);backdrop-filter:blur(4px)}
       .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#e3f2fd;color:#0d47a1;font-size:12px;font-weight:bold}
       .btn{padding:9px 14px;border:none;border-radius:8px;background:#1976d2;color:#fff;cursor:pointer;font-weight:bold;transition:transform .12s ease,box-shadow .12s ease}
       .btn.secondary{background:#6c757d}
@@ -64,6 +69,13 @@ webui = """
         .section-head{flex-direction:column;align-items:flex-start}
       }
     </style>
+
+    <div class="bg-stage">
+      <div id="bg1" class="bg-layer"></div>
+      <div id="bg2" class="bg-layer"></div>
+      <div class="bg-overlay"></div>
+      <div class="bg-noise"></div>
+    </div>
 
     <div class="page">
       <div class="top-bar">
@@ -255,6 +267,45 @@ webui = """
 
     <script>
 // 移除 ECharts CDN 引用
+
+      const BACKGROUND_IMAGES = [
+        '/wallpaper/bg001.jpg',
+        '/wallpaper/bg002.jpg'
+      ];
+      const BACKGROUND_INTERVAL_MS = 60000; // 默认 60s
+      let bgIndex = 0;
+      let bgTimer = null;
+      let reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function setBg(layerEl, url){
+        layerEl.style.backgroundImage = `url(${url})`;
+      }
+
+      function startBgCarousel(){
+        const layer1 = document.getElementById('bg1');
+        const layer2 = document.getElementById('bg2');
+        if(!layer1 || !layer2 || BACKGROUND_IMAGES.length===0) return;
+        setBg(layer1, BACKGROUND_IMAGES[0]);
+        layer1.classList.add('active');
+        if(BACKGROUND_IMAGES.length===1 || reduceMotion){
+          return; // 单张或减少动画时不轮播
+        }
+        bgIndex = 1;
+        bgTimer = setInterval(()=>{
+          const nextUrl = BACKGROUND_IMAGES[bgIndex % BACKGROUND_IMAGES.length];
+          const showFirst = bgIndex % 2 === 0;
+          const entering = showFirst ? layer1 : layer2;
+          const leaving = showFirst ? layer2 : layer1;
+          setBg(entering, nextUrl);
+          entering.classList.add('active');
+          leaving.classList.remove('active');
+          bgIndex += 1;
+        }, BACKGROUND_INTERVAL_MS);
+      }
+
+      function stopBgCarousel(){
+        if(bgTimer){ clearInterval(bgTimer); bgTimer = null; }
+      }
 
       // 加载所有球队列表
       async function loadTeams(){
@@ -950,6 +1001,11 @@ webui = """
       await loadSeasons();
       fetchStandings();
       await loadTeams();
+      if(reduceMotion){
+        stopBgCarousel();
+      }else{
+        startBgCarousel();
+      }
     })
     </script>
     """
