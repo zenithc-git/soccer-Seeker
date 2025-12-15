@@ -693,9 +693,8 @@ webui = """
       }
       return `<div class="player-grid">${players.map(p=>{
         const name = getPlayerFullName(p);
-        const pos = p.position ? ` · ${p.position}` : '';
-        const shirt = (p.shirt_no || p.shirt_no === 0) ? ` #${p.shirt_no}` : '';
-        return `<div class="player-chip" data-player-id="${p.id||''}" data-player-name="${name}">${name}${shirt}${pos}</div>`;
+        const number = (p.shirt_no || p.shirt_no === 0) ? `${p.shirt_no} ` : '';
+        return `<div class="player-chip" data-player-id="${p.id||''}" data-player-name="${name}">${number}${name}</div>`;
       }).join('')}</div>`;
     }
 
