@@ -1,4 +1,5 @@
 flask
 sqlalchemy
-pydantic      # 将来给 API 做数据校验可用（可选）
-python-dotenv # 读环境变量（可选）
+pydantic      # 将来给 API 做数据校验可用
+python-dotenv # 读环境变量
+matplotlib    # 数据可视化

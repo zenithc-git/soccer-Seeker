@@ -1,4 +1,0 @@
-#构建并插入数值
-
-python -m backend.scripts.create_db
-python -m backend.scripts.import_tables

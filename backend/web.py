@@ -30,8 +30,14 @@ webui = """
       .record-draw{background:#f3f4f6;color:#374151}
       .record-loss{background:#ffebee;color:#c62828}
       .player-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:10px}
-      .player-chip{background:#e3f2fd;border-radius:10px;padding:8px 10px;color:#0d47a1;font-weight:600}
+      .player-chip{background:#e3f2fd;border-radius:10px;padding:8px 10px;color:#0d47a1;font-weight:600;cursor:pointer;border:1px solid #cbd5e1;transition:transform .12s ease,box-shadow .12s ease,background .12s ease}
+      .player-chip:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(0,0,0,0.08);background:#dceafe}
       .team-modal{max-width:760px;width:95%}
+      .player-modal{max-width:640px;width:95%}
+      .player-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:10px 0}
+      .player-field{padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#0f172a}
+      .player-field .label{color:#475569;font-size:12px;display:block;margin-bottom:4px}
+      .player-extra{margin-top:12px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;padding:12px;color:#475569;font-size:13px}
       .badge{display:inline-block;padding:6px 10px;border-radius:10px;font-weight:bold;font-size:12px;background:#e2e8f0;color:#0f172a;margin-right:6px}
       .top-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
       .user-chip{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:999px;background:#e3f2fd;color:#0d47a1;cursor:pointer;border:1px solid #cbd5e1;box-shadow:0 4px 12px rgba(0,0,0,0.08)}
@@ -222,6 +228,20 @@ webui = """
           <button id="teamDetailClose" class="btn secondary">关闭</button>
         </div>
         <div id="teamDetailBody" style="margin-top:12px"></div>
+      </div>
+    </div>
+
+    <!-- Player detail modal -->
+    <div id="playerDetailBackdrop" class="modal-backdrop">
+      <div class="modal player-modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <div>
+            <h2 id="playerDetailName" style="margin-bottom:6px"></h2>
+            <div id="playerDetailBadges" class="muted"></div>
+          </div>
+          <button id="playerDetailClose" class="btn secondary">关闭</button>
+        </div>
+        <div id="playerDetailBody" style="margin-top:12px"></div>
       </div>
     </div>
 
@@ -663,6 +683,40 @@ webui = """
 
     let lastTeamData = null;
 
+    function getPlayerFullName(p){
+      return `${(p?.first_name||'').trim()} ${(p?.last_name||'').trim()}`.trim() || '未命名球员';
+    }
+
+    function buildPlayerChipHtml(players){
+      if(!players || players.length===0){
+        return '<div class="muted">暂无球员数据</div>';
+      }
+      return `<div class="player-grid">${players.map(p=>{
+        const name = getPlayerFullName(p);
+        const pos = p.position ? ` · ${p.position}` : '';
+        const shirt = (p.shirt_no || p.shirt_no === 0) ? ` #${p.shirt_no}` : '';
+        return `<div class="player-chip" data-player-id="${p.id||''}" data-player-name="${name}">${name}${shirt}${pos}</div>`;
+      }).join('')}</div>`;
+    }
+
+    function bindPlayerChipEvents(container, players){
+      if(!container || !players || players.length===0) return;
+      const byId = new Map();
+      players.forEach(p=>{
+        if(p.id !== undefined && p.id !== null){
+          byId.set(String(p.id), p);
+        }
+      });
+      container.querySelectorAll('.player-chip').forEach(chip=>{
+        chip.addEventListener('click', ()=>{
+          const pid = chip.dataset.playerId;
+          const pname = chip.dataset.playerName;
+          const player = (pid && byId.get(pid)) || players.find(p=> getPlayerFullName(p) === pname);
+          openPlayerModal(player || null, pname);
+        });
+      });
+    }
+
     function resetTeamProfile(){
       lastTeamData = null;
       document.getElementById('teamProfileTitle').textContent = 'Team hub';
@@ -707,9 +761,7 @@ webui = """
     function renderTeamProfile(data){
       const contentEl = document.getElementById('teamProfileContent');
       const players = data.players || [];
-      const playerChips = players.length
-        ? `<div class="player-grid">${players.map(p=>`<div class="player-chip">${(p.first_name||'').trim()} ${(p.last_name||'').trim()}${p.position?`  - ${p.position}`:''}</div>`).join('')}</div>`
-        : '<div class="muted">No player data</div>';
+      const playerChips = buildPlayerChipHtml(players);
       contentEl.innerHTML = `
         <div class="record-row">
           <div class="record-chip record-win">W ${data.won ?? '-'}</div>
@@ -721,6 +773,7 @@ webui = """
           ${playerChips}
         </div>
       `;
+      bindPlayerChipEvents(contentEl, players);
     }
 
     function renderTeamDetail(data){
@@ -742,10 +795,36 @@ webui = """
         </div>
         <div class="muted" style="margin-bottom:8px">进球 ${data.gf ?? '-'} · 失球 ${data.ga ?? '-'} · 净胜 ${data.gd ?? '-'}</div>
         <h4 style="margin:10px 0 6px">球员名单 (${players.length})</h4>
-        <div class="player-grid">
-          ${players.map(p=>`<div class="player-chip">${(p.first_name||'').trim()} ${(p.last_name||'').trim()}${p.position?` - ${p.position}`:''}</div>`).join('') || '<div class="muted">暂无球员数据</div>'}
-        </div>
+        ${buildPlayerChipHtml(players)}
       `;
+      bindPlayerChipEvents(bodyEl, players);
+    }
+
+    function openPlayerModal(player, fallbackName=''){
+      const nameEl = document.getElementById('playerDetailName');
+      const badgeEl = document.getElementById('playerDetailBadges');
+      const bodyEl = document.getElementById('playerDetailBody');
+      const fullName = player ? getPlayerFullName(player) : (fallbackName || '球员');
+      nameEl.textContent = fullName;
+      const badges = [];
+      if(player?.position){ badges.push(`<span class="badge">位置 ${player.position}</span>`); }
+      if(player?.shirt_no || player?.shirt_no === 0){ badges.push(`<span class="badge">号码 ${player.shirt_no}</span>`); }
+      badgeEl.innerHTML = badges.join('') || '<span class="muted">暂无基础信息</span>';
+
+      const rows = [
+        {label:'姓名', value: fullName},
+        {label:'位置', value: player?.position || '未登记'},
+        {label:'球衣号', value: (player?.shirt_no || player?.shirt_no === 0) ? player.shirt_no : '未登记'},
+        {label:'生日', value: player?.birth_date || '未登记'},
+        {label:'所属球队', value: lastTeamData?.team || '当前球队'},
+      ];
+      bodyEl.innerHTML = `
+        <div class="player-meta">
+          ${rows.map(r=>`<div class="player-field"><span class="label">${r.label}</span><div>${r.value}</div></div>`).join('')}
+        </div>
+        <div class="player-extra">这里可以放球员照片、赛季图表、更多文字介绍等内容，后续直接在此容器扩展即可。</div>
+      `;
+      showPlayerModal();
     }
 
     function showTeamDetail(){
@@ -753,6 +832,13 @@ webui = """
     }
     function hideTeamDetail(){
       document.getElementById('teamDetailBackdrop').style.display = 'none';
+    }
+
+    function showPlayerModal(){
+      document.getElementById('playerDetailBackdrop').style.display = 'flex';
+    }
+    function hidePlayerModal(){
+      document.getElementById('playerDetailBackdrop').style.display = 'none';
     }
 
     document.getElementById('clearTeamProfile').addEventListener('click', resetTeamProfile);
@@ -763,6 +849,8 @@ webui = """
     });
     document.getElementById('teamDetailClose').addEventListener('click', hideTeamDetail);
     document.getElementById('teamDetailBackdrop').addEventListener('click', function(e){ if(e.target.id === 'teamDetailBackdrop') hideTeamDetail(); });
+    document.getElementById('playerDetailClose').addEventListener('click', hidePlayerModal);
+    document.getElementById('playerDetailBackdrop').addEventListener('click', function(e){ if(e.target.id === 'playerDetailBackdrop') hidePlayerModal(); });
 
     function refreshBoards(){
       fetchStandings();
