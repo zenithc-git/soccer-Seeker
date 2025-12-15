@@ -132,7 +132,7 @@ webui = """
         <div id="proMetricsStatus" class="muted" style="margin-top:10px">需登录且 VIP/管理员 可用</div>
         <div id="proMetricsResult"></div>
         <div id="proMetricsLog"></div>
-      </div>
+  </div>
 
       <div class="card">
         <h3>账户与用户操作</h3>
@@ -336,39 +336,72 @@ webui = """
         const resultEl = document.getElementById('proMetricsResult');
         const logEl = document.getElementById('proMetricsLog');
         const m = data.metrics || {};
-        statusEl.textContent = `${data.team || ''} · 赛季 ${data.season || ''} · 预期积分 ${m.exp_points ?? '-'}，实际 ${m.points ?? '-'}`;
-        resultEl.innerHTML = `
-          <div class="metric-grid">
-            <div class="metric-box">
-              <div class="metric-title">预期积分</div>
-              <div class="metric-value">${m.exp_points ?? '-'}</div>
-              <div class="metric-sub">每场 ${m.exp_points_per_match ?? '-'} 分</div>
-            </div>
-            <div class="metric-box">
-              <div class="metric-title">实际积分</div>
-              <div class="metric-value">${m.points ?? '-'}</div>
-              <div class="metric-sub">每场 ${m.actual_points_per_match ?? '-'} 分</div>
-            </div>
-            <div class="metric-box">
-              <div class="metric-title">差值</div>
-              <div class="metric-value" style="color:${(m.delta_points||0)>=0?'#2e7d32':'#c62828'}">${m.delta_points ?? '-'}</div>
-              <div class="metric-sub">${(m.delta_points||0)>=0?'高于':'低于'}模型</div>
-            </div>
-            <div class="metric-box">
-              <div class="metric-title">预期胜率 (Pythagorean k=${m.exponent ?? 2.7})</div>
-              <div class="metric-value">${m.exp_win_rate !== undefined ? (m.exp_win_rate*100).toFixed(1)+'%' : '-'}</div>
-              <div class="metric-sub">进球 ${m.gf ?? '-'} · 失球 ${m.ga ?? '-'}</div>
-            </div>
-          </div>
-          <div class="player-extra" style="margin-top:12px">AI 解读：${data.narrative || '暂无解读'}</div>
-        `;
-        const logLines = (data.log && data.log.length) ? data.log.map(line=>`<div class="log-line">${line}</div>`).join('') : '<div class="log-line">暂无计算步骤</div>';
+  // 先留白，等log动画完再显示
+  statusEl.textContent = `${data.team || ''} · 赛季 ${data.season || ''}`;
+  resultEl.innerHTML = `<div style="height:120px"></div>`;
+        // 动态逐字打印log，完毕后再显示上方内容
+        const logLines = (data.log && data.log.length) ? data.log : ['暂无计算步骤'];
         logEl.innerHTML = `
           <div class="log-block">
             <div class="log-title">计算过程</div>
-            ${logLines}
+            <div id="aiLogOutput"></div>
           </div>
         `;
+        function typeLog(lines, idx=0, charIdx=0, doneCb){
+          if(idx >= lines.length){ if(doneCb) doneCb(); return; }
+          const output = document.getElementById('aiLogOutput');
+          if(!output) return;
+          if(idx === 0 && charIdx === 0) output.innerHTML = '';
+          let line = lines[idx];
+          if(charIdx === 0) output.innerHTML += '<div class="log-line" id="logline'+idx+'"></div>';
+          const lineDiv = document.getElementById('logline'+idx);
+          if(lineDiv){
+            lineDiv.textContent = line.slice(0, charIdx+1);
+          }
+          if(charIdx < line.length-1){
+            setTimeout(()=>typeLog(lines, idx, charIdx+1, doneCb), 18+Math.random()*30);
+          }else{
+            setTimeout(()=>typeLog(lines, idx+1, 0, doneCb), 200);
+          }
+        }
+        setTimeout(()=>typeLog(logLines, 0, 0, ()=>{
+          statusEl.textContent = `${data.team || ''} · 赛季 ${data.season || ''} · 预期积分 ${m.exp_points ?? '-'}，实际 ${m.points ?? '-'}`;
+          resultEl.innerHTML = `
+            <div class="metric-grid">
+              <div class="metric-box">
+                <div class="metric-title">预期积分</div>
+                <div class="metric-value">${m.exp_points ?? '-'}</div>
+                <div class="metric-sub">每场 ${m.exp_points_per_match ?? '-'} 分</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-title">实际积分</div>
+                <div class="metric-value">${m.points ?? '-'}</div>
+                <div class="metric-sub">每场 ${m.actual_points_per_match ?? '-'} 分</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-title">差值</div>
+                <div class="metric-value" style="color:${(m.delta_points||0)>=0?'#2e7d32':'#c62828'}">${m.delta_points ?? '-'}</div>
+                <div class="metric-sub">${(m.delta_points||0)>=0?'高于':'低于'}预期</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-title">胜率对比</div>
+                <div class="metric-value">
+                  预期 ${m.exp_win_rate !== undefined ? (m.exp_win_rate*100).toFixed(1)+'%' : '-'}<br>
+                  实际 <span style="display:inline-block;margin-top:2px;">${m.actual_win_rate !== undefined ? (m.actual_win_rate*100).toFixed(1)+'%' : '-'}</span>
+                </div>
+                <div class="metric-sub">
+                  <span style="color:${((m.actual_win_rate ?? 0)-(m.exp_win_rate ?? 0))>=0?'#2e7d32':'#c62828'};font-weight:bold">
+                    ${((m.actual_win_rate ?? 0)-(m.exp_win_rate ?? 0))>=0?'高于':'低于'} 预期
+                    ${m.exp_win_rate !== undefined && m.actual_win_rate !== undefined
+                      ? Math.abs((m.actual_win_rate - m.exp_win_rate) * 100).toFixed(1) + '%'
+                      : ''}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="player-extra" style="margin-top:12px">AI 解读：${data.narrative || '暂无解读'}</div>
+          `;
+        }), 400);
       }
 
       async function loadProMetrics(){

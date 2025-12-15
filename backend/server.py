@@ -132,10 +132,14 @@ def calculate_pythagorean_metrics(gf: int, ga: int, played: int, points: int, ex
     actual_points_per_match = points / played if played else 0
     delta_points = points - exp_points
 
+    # 实际胜率
+    actual_win_rate = points / (3 * played) if played else 0
+
     log.append(f"步骤2：预期积分 = 预期胜率 × 3 × 场次 = {exp_win_rate:.4f} × 3 × {played} = {exp_points:.2f}")
     log.append(f"步骤3：实际积分/场 = {actual_points_per_match:.3f}，预期积分/场 = {exp_points_per_match:.3f}")
     log.append(f"结论：相对预期 {('高' if delta_points>=0 else '低')} {abs(delta_points):.2f} 分。")
-
+    log.append(f"步骤4：实际胜率 = 实际积分 / (3 × 场次) = {points} / (3 × {played}) = {actual_win_rate:.4f}")
+    
     metrics = {
         "exponent": exponent,
         "played": played,
@@ -143,6 +147,7 @@ def calculate_pythagorean_metrics(gf: int, ga: int, played: int, points: int, ex
         "ga": ga,
         "points": points,
         "exp_win_rate": round(exp_win_rate, 4),
+        "actual_win_rate": round(actual_win_rate, 4),  # ✅ 新增
         "exp_points": round(exp_points, 2),
         "exp_points_per_match": round(exp_points_per_match, 3),
         "actual_points_per_match": round(actual_points_per_match, 3),
