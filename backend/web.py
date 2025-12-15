@@ -113,7 +113,7 @@ webui = """
           <div class="section-head">
             <div>
               <h2>球队历年数据可视化</h2>
-              <p class="muted">选择球队，查看其历年排名、进球、失球、净胜球折线图</p>
+              <p class="muted">选择球队，查看其历年排名、进球、失球、净胜球折线图（由后端Python生成图片）</p>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <select id="teamSelect" style="padding:9px 10px;border-radius:8px;border:1px solid #cbd5e1;min-width:160px"></select>
@@ -121,9 +121,8 @@ webui = """
             </div>
           </div>
           <div id="teamStatsStatus" class="muted" style="margin-top:10px">等待选择球队...</div>
-          <div id="teamCharts" style="width:100%;max-width:900px;margin:0 auto">
-            <div id="rankChart" style="height:320px;margin-bottom:24px;"></div>
-            <div id="statsChart" style="height:320px;"></div>
+          <div id="teamCharts" style="width:100%;max-width:900px;margin:0 auto;text-align:center">
+            <img id="teamStatsImg" style="max-width:100%;display:none" alt="球队历年数据图" />
           </div>
         </div>
 
@@ -227,10 +226,7 @@ webui = """
     </div>
 
     <script>
-// 引入 ECharts CDN
-      const echartsScript = document.createElement('script');
-      echartsScript.src = 'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js';
-      document.head.appendChild(echartsScript);
+// 移除 ECharts CDN 引用
 
       // 加载所有球队列表
       async function loadTeams(){
@@ -283,53 +279,20 @@ webui = """
           return;
         }
         document.getElementById('teamStatsStatus').textContent = '加载中...';
-        try{
-          const res = await fetch(`/api/team_stats?team_name=${encodeURIComponent(teamName)}`,{headers:{'Authorization':`Bearer ${token}`}});
-          const data = await res.json();
-          if(!res.ok || !data.stats){
-            document.getElementById('teamStatsStatus').textContent = '获取失败: '+(data.error||res.status);
-            return;
-          }
-          document.getElementById('teamStatsStatus').textContent = `已加载 ${data.team} 的历年数据，共 ${data.stats.length} 赛季`;
-          drawTeamCharts(data);
-        }catch(e){
-          document.getElementById('teamStatsStatus').textContent = '网络错误: '+e;
-        }
-      }
-
-      // 绘制球队折线图
-      function drawTeamCharts(data){
-        if(!window.echarts){ setTimeout(()=>drawTeamCharts(data), 300); return; }
-        const seasons = data.stats.map(s=>s.season);
-        const ranks = data.stats.map(s=>s.position);
-        const gf = data.stats.map(s=>s.gf);
-        const ga = data.stats.map(s=>s.ga);
-        const gd = data.stats.map(s=>s.gd);
-
-        // 排名折线图（纵坐标反向）
-        const rankChart = echarts.init(document.getElementById('rankChart'));
-        rankChart.setOption({
-          title: { text: `${data.team} 历年排名`, left:'center' },
-          tooltip: { trigger: 'axis' },
-          xAxis: { type: 'category', data: seasons, name: '赛季' },
-          yAxis: { type: 'value', name: '排名', inverse: true, min: Math.min(...ranks), max: Math.max(...ranks) },
-          series: [{ name: '排名', type: 'line', data: ranks, smooth: true, symbol: 'circle', lineStyle:{width:3}, itemStyle:{color:'#1976d2'} }]
-        });
-
-        // 进球/失球/净胜球折线图
-        const statsChart = echarts.init(document.getElementById('statsChart'));
-        statsChart.setOption({
-          title: { text: `${data.team} 历年进球/失球/净胜球`, left:'center' },
-          tooltip: { trigger: 'axis' },
-          legend: { data: ['进球','失球','净胜球'], top: 30 },
-          xAxis: { type: 'category', data: seasons, name: '赛季' },
-          yAxis: { type: 'value', name: '数量' },
-          series: [
-            { name: '进球', type: 'line', data: gf, smooth: true, symbol: 'circle', lineStyle:{width:2}, itemStyle:{color:'#43a047'} },
-            { name: '失球', type: 'line', data: ga, smooth: true, symbol: 'circle', lineStyle:{width:2}, itemStyle:{color:'#e53935'} },
-            { name: '净胜球', type: 'line', data: gd, smooth: true, symbol: 'circle', lineStyle:{width:2}, itemStyle:{color:'#fbc02d'} }
-          ]
-        });
+        const img = document.getElementById('teamStatsImg');
+        img.style.display = 'none';
+        img.src = '';
+        // 加载图片
+        img.onload = function(){
+          document.getElementById('teamStatsStatus').textContent = '图片加载成功';
+          img.style.display = '';
+        };
+        img.onerror = function(){
+          document.getElementById('teamStatsStatus').textContent = '图片加载失败';
+          img.style.display = 'none';
+        };
+        // 带token
+        img.src = `/api/team_stats_plot?team_name=${encodeURIComponent(teamName)}&token=${encodeURIComponent(token)}`;
       }
 
       document.getElementById('loadTeamStatsBtn').addEventListener('click', loadTeamStats);

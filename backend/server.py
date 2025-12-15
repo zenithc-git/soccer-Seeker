@@ -11,6 +11,69 @@ from core.db import SessionLocal
 from core.db.models import User, Season, Team, TeamSeasonStats, Player
 
 app = Flask(__name__)
+
+# Matplotlib球队历年数据图片API
+import io
+import matplotlib
+matplotlib.rcParams['font.sans-serif'] = ['SimHei']  # 指定为黑体
+matplotlib.rcParams['axes.unicode_minus'] = False    # 负号正常显示
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from flask import send_file
+@app.route('/api/team_stats_plot')
+def team_stats_plot():
+    token = request.args.get('token') or request.headers.get('Authorization', '').replace('Bearer ', '')
+    user_id = TOKENS.get(token)
+    if not user_id:
+        return {'error': 'missing or invalid token'}, 401
+    session = SessionLocal()
+    try:
+        user = session.query(User).get(user_id)
+        if not user or user.role not in ("vip_user", "admin"):
+            return {'error': 'vip access required'}, 403
+        team_name = request.args.get('team_name')
+        if not team_name:
+            return {'error': 'team_name required'}, 400
+        team = session.query(Team).filter_by(name=team_name).first()
+        if not team:
+            return {'error': 'team not found'}, 404
+        stats = (
+            session.query(TeamSeasonStats, Season)
+            .join(Season, TeamSeasonStats.season_id == Season.id)
+            .filter(TeamSeasonStats.team_id == team.id)
+            .order_by(Season.end_year.asc())
+            .all()
+        )
+        if not stats:
+            return {'error': 'no data'}, 404
+        seasons = [season.end_year for _, season in stats]
+        ranks = [st.position for st, _ in stats]
+        gf = [st.gf for st, _ in stats]
+        ga = [st.ga for st, _ in stats]
+        gd = [st.gd for st, _ in stats]
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8))
+        ax1.plot(seasons, ranks, marker='o', color='#1976d2', linewidth=2, label='排名')
+        ax1.set_title(f'{team_name} 历年排名')
+        ax1.set_xlabel('赛季')
+        ax1.set_ylabel('排名')
+        ax1.invert_yaxis()
+        ax1.grid(True, linestyle='--', alpha=0.5)
+        ax2.plot(seasons, gf, marker='o', color='#43a047', label='进球')
+        ax2.plot(seasons, ga, marker='o', color='#e53935', label='失球')
+        ax2.plot(seasons, gd, marker='o', color='#fbc02d', label='净胜球')
+        ax2.set_title(f'{team_name} 历年进球/失球/净胜球')
+        ax2.set_xlabel('赛季')
+        ax2.set_ylabel('数量')
+        ax2.legend()
+        ax2.grid(True, linestyle='--', alpha=0.5)
+        plt.tight_layout()
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        plt.close(fig)
+        buf.seek(0)
+        return send_file(buf, mimetype='image/png')
+    finally:
+        session.close()
 BASE_DIR = Path(__file__).resolve().parent
 AVATAR_DIR = BASE_DIR / "uploads" / "avatars"
 AVATAR_DIR.mkdir(parents=True, exist_ok=True)
