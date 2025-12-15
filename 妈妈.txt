@@ -1,0 +1,12 @@
+#构建并插入数值
+
+python -m backend.scripts.create_db
+python -m backend.scripts.import_tables
+
+#网页
+python backend/server.py
+
+#管理员账号
+
+admin@local.com
+admin123
