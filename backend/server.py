@@ -31,6 +31,29 @@ def get_players_for_team(session, team_id: int):
     return result
 
 
+# Simple in-memory token store: token -> user_id
+TOKENS = {}
+
+
+def get_auth_user():
+    """
+    Resolve current user from Authorization header.
+    Returns None if missing/invalid.
+    """
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        return None
+    token = auth.split(None, 1)[1]
+    user_id = TOKENS.get(token)
+    if not user_id:
+        return None
+    session = SessionLocal()
+    try:
+        return session.query(User).get(user_id)
+    finally:
+        session.close()
+
+
 # 新增：球队历年数据API
 @app.route("/api/team_stats", methods=["GET"])
 def api_team_stats():
@@ -38,6 +61,12 @@ def api_team_stats():
     查询参数：team_id 或 team_name（二选一，推荐用 team_id）
     返回该队所有赛季的排名、进球、失球、净胜球数据，按赛季升序排列
     """
+    user = get_auth_user()
+    if not user:
+        return jsonify({"error": "missing or invalid token"}), 401
+    if user.role not in ("vip_user", "admin"):
+        return jsonify({"error": "vip access required"}), 403
+
     team_id = request.args.get("team_id", type=int)
     team_name = request.args.get("team_name", type=str)
     if not team_id and not team_name:
@@ -75,9 +104,6 @@ def api_team_stats():
         })
     finally:
         session.close()
-
-# Simple in-memory token store: token -> user_id
-TOKENS = {}
 
 @app.route("/")
 def home():

@@ -13,7 +13,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from backend.core.db import Base, SessionLocal, engine
 from backend.core.db.models import Season, Team, TeamSeasonStats  # ✅ 建议从 models 导入，避免 core.db 未导出时报错
 
-# ✅ 你的 CSV 实际在 backend/data 目录（按你的截图）
+# ✅ CSV 实际在 backend/data 目录
 DATA_FILE = (
     Path(__file__).resolve().parents[2]  # backend/
     / "data"

@@ -186,11 +186,7 @@ webui = """
 
       // 加载所有球队列表
       async function loadTeams(){
-        const token = requireAuth();
-        if(!token){
-          document.getElementById('teamStatsStatus').textContent = '需登录后查看球队数据';
-          return;
-        }
+        const token = localStorage.getItem('token');
         const select = document.getElementById('teamSelect');
         select.innerHTML = '';
         try{
@@ -200,7 +196,8 @@ webui = """
             document.getElementById('teamStatsStatus').textContent = '请先选择赛季';
             return;
           }
-          const res = await fetch(`/api/standings?season=${encodeURIComponent(season)}&type=points`,{headers:{'Authorization':`Bearer ${token}`}});
+          const headers = token ? {'Authorization':`Bearer ${token}`} : {};
+          const res = await fetch(`/api/standings?season=${encodeURIComponent(season)}&type=points`,{headers});
           const data = await res.json();
           if(!res.ok || !data.rows){
             document.getElementById('teamStatsStatus').textContent = '获取球队失败: '+(data.error||res.status);
@@ -221,7 +218,15 @@ webui = """
       async function loadTeamStats(){
         const token = requireAuth();
         if(!token){
-          document.getElementById('teamStatsStatus').textContent = '需登录后查看球队数据';
+          document.getElementById('teamStatsStatus').textContent = '需登录后查看图表';
+          return;
+        }
+        if(!currentUser){
+          await fetchCurrentUser();
+        }
+        if(!isVipUser()){
+          document.getElementById('teamStatsStatus').textContent = '仅 VIP/管理员 可查看图表';
+          alert('图表仅限 VIP/管理员查看，请使用对应账号登录');
           return;
         }
         const teamName = document.getElementById('teamSelect').value;
@@ -340,11 +345,28 @@ webui = """
       }
     }
 
-    function setDataVisibility(show){
-      const standingsCard = document.getElementById('standingsCard');
-      const otherBoardsCard = document.getElementById('otherBoardsCard');
-      standingsCard.style.display = show ? '' : 'none';
-      otherBoardsCard.style.display = show ? '' : 'none';
+    let currentUser = null;
+
+    async function fetchCurrentUser(){
+      const token = localStorage.getItem('token');
+      if(!token){
+        currentUser = null;
+        return null;
+      }
+      try{
+        const res = await fetch('/api/me',{headers:{'Authorization':`Bearer ${token}`}});
+        const data = await res.json();
+        if(res.ok){
+          currentUser = data;
+          return data;
+        }
+      }catch(e){}
+      currentUser = null;
+      return null;
+    }
+
+    function isVipUser(){
+      return currentUser && (currentUser.role === 'vip_user' || currentUser.role === 'admin');
     }
 
     // 简易授权获取（带抑制重复弹窗）
@@ -431,15 +453,12 @@ webui = """
 
     // --- 赛季下拉 + 榜单 ---
     async function loadSeasons(){
-      const token = requireAuth();
-      if(!token){
-        document.getElementById('standingsStatus').textContent = '需登录后查看赛季与榜单';
-        return;
-      }
+      const token = localStorage.getItem('token');
       const select = document.getElementById('seasonSelect');
       select.innerHTML = '';
       try{
-        const res = await fetch('/api/seasons',{headers:{'Authorization':`Bearer ${token}`}});
+        const headers = token ? {'Authorization':`Bearer ${token}`} : {};
+        const res = await fetch('/api/seasons',{headers});
         const data = await res.json();
         if(!res.ok || !data.seasons){
           document.getElementById('standingsStatus').textContent = '获取赛季失败: '+(data.error||res.status);
@@ -456,12 +475,8 @@ webui = """
       }
     }
 
-    async function fetchStandings(token){
-      token = token || requireAuth({silent:true});
-      if(!token){ 
-        document.getElementById('standingsStatus').textContent='Login required to view the table';
-        return; 
-      }
+    async function fetchStandings(){
+      const token = localStorage.getItem('token');
       const season = document.getElementById('seasonSelect').value;
       const status = document.getElementById('standingsStatus');
       const grid = document.getElementById('standingsGrid');
@@ -470,7 +485,8 @@ webui = """
       grid.innerHTML = '';
       try{
         const url = `/api/standings?season=${encodeURIComponent(season)}&type=points`;
-        const res = await fetch(url,{headers:{'Authorization':`Bearer ${token}`} });
+        const headers = token ? {'Authorization':`Bearer ${token}`} : {};
+        const res = await fetch(url,{headers});
         const data = await res.json();
         if(!res.ok){ status.textContent = 'Failed: '+(data.error||res.status); return; }
         status.textContent = `${data.count} 支球队 · 赛季 ${data.season} · 积分榜`;
@@ -491,12 +507,8 @@ webui = """
       }
     }
 
-    async function fetchOtherBoards(token){
-      token = token || requireAuth({silent:true});
-      if(!token){ 
-        document.getElementById('otherBoardsStatus').textContent='需登录后查看榜单';
-        return; 
-      }
+    async function fetchOtherBoards(){
+      const token = localStorage.getItem('token');
       const season = document.getElementById('seasonSelect').value;
       const type = document.getElementById('boardTypeSelect').value;
       const status = document.getElementById('otherBoardsStatus');
@@ -506,7 +518,8 @@ webui = """
       container.innerHTML = '';
 
       try{
-        const res = await fetch(`/api/standings?season=${encodeURIComponent(season)}&type=${encodeURIComponent(type)}`,{headers:{'Authorization':`Bearer ${token}`}});
+        const headers = token ? {'Authorization':`Bearer ${token}`} : {};
+        const res = await fetch(`/api/standings?season=${encodeURIComponent(season)}&type=${encodeURIComponent(type)}`,{headers});
         const data = await res.json();
         if(!res.ok){ status.textContent = '获取失败: '+(data.error||res.status); return; }
         status.textContent = `已更新榜单 · 赛季 ${data.season} · 指标 ${type}`;
@@ -546,8 +559,7 @@ webui = """
     }
 
     async function openTeamProfile(teamId, teamName){
-      const token = requireAuth();
-      if(!token){ return; }
+      const token = localStorage.getItem('token');
       const season = document.getElementById('seasonSelect').value;
       const titleEl = document.getElementById('teamProfileTitle');
       const subtitleEl = document.getElementById('teamProfileSubtitle');
@@ -560,7 +572,8 @@ webui = """
         if(teamId) params.append('team_id', teamId);
         if(teamName) params.append('team_name', teamName);
         if(season) params.append('season', season);
-        const res = await fetch(`/api/team_profile?${params.toString()}`,{headers:{'Authorization':`Bearer ${token}`} });
+        const headers = token ? {'Authorization':`Bearer ${token}`} : {};
+        const res = await fetch(`/api/team_profile?${params.toString()}`,{headers});
         const data = await res.json();
         if(!res.ok){
           subtitleEl.textContent = data.error || 'Failed to load';
@@ -639,31 +652,23 @@ webui = """
     document.getElementById('teamDetailBackdrop').addEventListener('click', function(e){ if(e.target.id === 'teamDetailBackdrop') hideTeamDetail(); });
 
     function refreshBoards(){
-      const token = requireAuth();
-      if(!token) return;
-      fetchStandings(token);
-      fetchOtherBoards(token);
+      fetchStandings();
+      fetchOtherBoards();
     }
 
     document.getElementById('loadStandingsBtn').addEventListener('click', refreshBoards);
-    document.getElementById('boardTypeSelect').addEventListener('change', function(){ fetchOtherBoards(requireAuth({silent:true})) });
+    document.getElementById('boardTypeSelect').addEventListener('change', function(){ fetchOtherBoards() });
 
-    // 初始加载：直接预取赛季与榜单（无需登录）
+    // 初始加载：直接预取赛季与榜单（无需登录？
     window.addEventListener('load', async function(){ 
       resetTeamProfile();
       const token = localStorage.getItem('token');
-      if(!token){
-        document.getElementById('standingsStatus').textContent = '需登录后查看积分榜';
-        document.getElementById('otherBoardsStatus').textContent = '需登录后查看其他榜';
-        setDataVisibility(false);
-        showBackdrop('choiceBackdrop');
-        syncAuthUI();
-        return;
+      if(token){
+        await fetchCurrentUser();
       }
-      setDataVisibility(true);
+      syncAuthUI();
       await loadSeasons();
       refreshBoards();
-      syncAuthUI();
       await loadTeams();
     })
     </script>
