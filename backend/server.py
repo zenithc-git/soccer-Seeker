@@ -100,6 +100,66 @@ def get_players_for_team(session, team_id: int):
     return result
 
 
+def calculate_pythagorean_metrics(gf: int, ga: int, played: int, points: int, exponent: float = 2.7):
+    """
+    Derive Pythagorean expectation style metrics with a small step log.
+    Returns (metrics dict, log list[str]).
+    """
+    log = []
+    log.append(f"🤖 思考：当前赛季场次 {played}，进球 {gf}，失球 {ga}，实际积分 {points}。")
+    if played <= 0:
+        return None, ["无有效场次，无法计算。"]
+
+    gf_term = gf ** exponent
+    ga_term = ga ** exponent
+    denom = gf_term + ga_term
+
+    log.append(f"步骤1：使用 Pythagorean expectation，指数 k={exponent:.1f}。")
+    log.append(f"  进球项 GF^k = {gf}^{exponent:.1f} = {gf_term:.4f}")
+    log.append(f"  失球项 GA^k = {ga}^{exponent:.1f} = {ga_term:.4f}")
+
+    if denom == 0:
+        exp_win_rate = 0.5
+        log.append("  进球与失球皆为 0，用 50% 胜率作为基准。")
+    else:
+        exp_win_rate = gf_term / denom
+        log.append(f"  预期胜率 = GF^k / (GF^k + GA^k) = {exp_win_rate:.4f}")
+
+    exp_points = exp_win_rate * 3 * played
+    exp_points_per_match = exp_points / played if played else 0
+
+    actual_points_per_match = points / played if played else 0
+    delta_points = points - exp_points
+
+    log.append(f"步骤2：预期积分 = 预期胜率 × 3 × 场次 = {exp_win_rate:.4f} × 3 × {played} = {exp_points:.2f}")
+    log.append(f"步骤3：实际积分/场 = {actual_points_per_match:.3f}，预期积分/场 = {exp_points_per_match:.3f}")
+    log.append(f"结论：相对预期 {('高' if delta_points>=0 else '低')} {abs(delta_points):.2f} 分。")
+
+    metrics = {
+        "exponent": exponent,
+        "played": played,
+        "gf": gf,
+        "ga": ga,
+        "points": points,
+        "exp_win_rate": round(exp_win_rate, 4),
+        "exp_points": round(exp_points, 2),
+        "exp_points_per_match": round(exp_points_per_match, 3),
+        "actual_points_per_match": round(actual_points_per_match, 3),
+        "delta_points": round(delta_points, 2),
+    }
+    return metrics, log
+
+
+def build_narrative(team_name: str, season_year: int, metrics: dict) -> str:
+    delta = metrics.get("delta_points", 0)
+    tendency = "超过" if delta >= 0 else "低于"
+    tone = "状态火热，兑现甚至超出进攻端潜力。" if delta >= 5 else ("表现与基础数据相符。" if abs(delta) < 2 else "还有提升空间，结果略低于模型预期。")
+    return (
+        f"{team_name} 在 {season_year} 赛季基于进球/失球推算的预期积分为 "
+        f"{metrics.get('exp_points')} 分，实际积分 {metrics.get('points')} 分，"
+        f"{tendency}模型 {abs(delta)} 分；{tone}"
+    )
+
 # Simple in-memory token store: token -> user_id
 TOKENS = {}
 
@@ -172,6 +232,71 @@ def api_team_stats():
         return jsonify({
             "team": team.name,
             "stats": result
+        })
+    finally:
+        session.close()
+
+
+@app.route("/api/pro_metrics", methods=["GET"])
+def api_pro_metrics():
+    """
+    VIP-only: calculate Pythagorean expectation for a given team + season,
+    and return both metrics and a human-friendly step log.
+    Query params: season (end_year, required) + team_id or team_name (one required).
+    """
+    user = get_auth_user()
+    if not user:
+        return jsonify({"error": "missing or invalid token"}), 401
+    if user.role not in ("vip_user", "admin"):
+        return jsonify({"error": "vip access required"}), 403
+
+    season_year = request.args.get("season", type=int)
+    team_id = request.args.get("team_id", type=int)
+    team_name = request.args.get("team_name", type=str)
+    if not season_year:
+        return jsonify({"error": "missing season"}), 400
+    if not team_id and not team_name:
+        return jsonify({"error": "missing team_id or team_name"}), 400
+
+    session = SessionLocal()
+    try:
+        season = session.query(Season).filter_by(end_year=season_year).first()
+        if not season:
+            return jsonify({"error": f"season {season_year} not found"}), 404
+
+        team = (
+            session.query(Team).filter_by(id=team_id).first()
+            if team_id else session.query(Team).filter_by(name=team_name).first()
+        )
+        if not team:
+            return jsonify({"error": "team not found"}), 404
+
+        stats_row = (
+            session.query(TeamSeasonStats)
+            .filter_by(team_id=team.id, season_id=season.id)
+            .first()
+        )
+        if not stats_row:
+            return jsonify({"error": "no stats for this team in the selected season"}), 404
+
+        metrics, log = calculate_pythagorean_metrics(
+            gf=stats_row.gf,
+            ga=stats_row.ga,
+            played=stats_row.played,
+            points=stats_row.points,
+        )
+        if not metrics:
+            return jsonify({"error": "unable to compute metrics"}), 400
+
+        narrative = build_narrative(team.name, season_year, metrics)
+
+        return jsonify({
+            "team": team.name,
+            "team_id": team.id,
+            "season": season_year,
+            "metrics": metrics,
+            "log": log,
+            "narrative": narrative,
         })
     finally:
         session.close()

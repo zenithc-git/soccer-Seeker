@@ -38,6 +38,14 @@ webui = """
       .player-field{padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#0f172a}
       .player-field .label{color:#475569;font-size:12px;display:block;margin-bottom:4px}
       .player-extra{margin-top:12px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;padding:12px;color:#475569;font-size:13px}
+      .metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px}
+      .metric-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px}
+      .metric-title{font-size:12px;color:#475569;margin-bottom:6px}
+      .metric-value{font-size:20px;font-weight:700;color:#0f172a}
+      .metric-sub{font-size:12px;color:#475569}
+      .log-block{margin-top:12px;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:12px;line-height:1.5;border:1px solid #1e293b}
+      .log-title{font-weight:700;margin-bottom:6px;font-size:14px}
+      .log-line{margin:4px 0;padding:8px;border-radius:10px;background:rgba(255,255,255,0.06)}
       .badge{display:inline-block;padding:6px 10px;border-radius:10px;font-weight:bold;font-size:12px;background:#e2e8f0;color:#0f172a;margin-right:6px}
       .top-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
       .user-chip{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:999px;background:#e3f2fd;color:#0d47a1;cursor:pointer;border:1px solid #cbd5e1;box-shadow:0 4px 12px rgba(0,0,0,0.08)}
@@ -131,6 +139,22 @@ webui = """
             <img id="teamStatsImg" style="max-width:100%;display:none" alt="球队历年数据图" />
           </div>
         </div>
+
+      <div class="card" id="proMetricsCard">
+        <div class="section-head">
+          <div>
+            <h2>专业数据分析 (VIP)</h2>
+            <p class="muted">基于进/失球的预期积分 + AI 风格计算过程</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select id="proTeamSelect" style="padding:9px 10px;border-radius:8px;border:1px solid #cbd5e1;min-width:160px"></select>
+            <button id="calcProMetricsBtn" class="btn">计算预期表现</button>
+          </div>
+        </div>
+        <div id="proMetricsStatus" class="muted" style="margin-top:10px">需登录且 VIP/管理员 可用</div>
+        <div id="proMetricsResult"></div>
+        <div id="proMetricsLog"></div>
+      </div>
 
       <div class="card">
         <h3>账户与用户操作</h3>
@@ -252,7 +276,9 @@ webui = """
       async function loadTeams(){
         const token = localStorage.getItem('token');
         const select = document.getElementById('teamSelect');
+        const proSelect = document.getElementById('proTeamSelect');
         select.innerHTML = '';
+        if(proSelect){ proSelect.innerHTML = ''; }
         try{
           // 复用 standings API 拿到所有球队
           const season = document.getElementById('seasonSelect').value;
@@ -272,6 +298,9 @@ webui = """
             opt.value = row.team;
             opt.textContent = row.team;
             select.appendChild(opt);
+            if(proSelect){
+              proSelect.appendChild(opt.cloneNode(true));
+            }
           });
         }catch(e){
           document.getElementById('teamStatsStatus').textContent = '网络错误: '+e;
@@ -317,6 +346,97 @@ webui = """
 
       document.getElementById('loadTeamStatsBtn').addEventListener('click', loadTeamStats);
       document.getElementById('seasonSelect').addEventListener('change', loadTeams);
+
+      function renderProMetrics(data){
+        const statusEl = document.getElementById('proMetricsStatus');
+        const resultEl = document.getElementById('proMetricsResult');
+        const logEl = document.getElementById('proMetricsLog');
+        const m = data.metrics || {};
+        statusEl.textContent = `${data.team || ''} · 赛季 ${data.season || ''} · 预期积分 ${m.exp_points ?? '-'}，实际 ${m.points ?? '-'}`;
+        resultEl.innerHTML = `
+          <div class="metric-grid">
+            <div class="metric-box">
+              <div class="metric-title">预期积分</div>
+              <div class="metric-value">${m.exp_points ?? '-'}</div>
+              <div class="metric-sub">每场 ${m.exp_points_per_match ?? '-'} 分</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-title">实际积分</div>
+              <div class="metric-value">${m.points ?? '-'}</div>
+              <div class="metric-sub">每场 ${m.actual_points_per_match ?? '-'} 分</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-title">差值</div>
+              <div class="metric-value" style="color:${(m.delta_points||0)>=0?'#2e7d32':'#c62828'}">${m.delta_points ?? '-'}</div>
+              <div class="metric-sub">${(m.delta_points||0)>=0?'高于':'低于'}模型</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-title">预期胜率 (Pythagorean k=${m.exponent ?? 2.7})</div>
+              <div class="metric-value">${m.exp_win_rate !== undefined ? (m.exp_win_rate*100).toFixed(1)+'%' : '-'}</div>
+              <div class="metric-sub">进球 ${m.gf ?? '-'} · 失球 ${m.ga ?? '-'}</div>
+            </div>
+          </div>
+          <div class="player-extra" style="margin-top:12px">AI 解读：${data.narrative || '暂无解读'}</div>
+        `;
+        const logLines = (data.log && data.log.length) ? data.log.map(line=>`<div class="log-line">${line}</div>`).join('') : '<div class="log-line">暂无计算步骤</div>';
+        logEl.innerHTML = `
+          <div class="log-block">
+            <div class="log-title">计算过程</div>
+            ${logLines}
+          </div>
+        `;
+      }
+
+      async function loadProMetrics(){
+        const statusEl = document.getElementById('proMetricsStatus');
+        const resultEl = document.getElementById('proMetricsResult');
+        const logEl = document.getElementById('proMetricsLog');
+        const token = requireAuth();
+        if(!token){
+          statusEl.textContent = '请先登录再计算';
+          resultEl.innerHTML = '';
+          logEl.innerHTML = '';
+          return;
+        }
+        if(!currentUser){
+          await fetchCurrentUser();
+        }
+        if(!isVipUser()){
+          statusEl.textContent = '仅 VIP/管理员 可用';
+          resultEl.innerHTML = '';
+          logEl.innerHTML = '';
+          alert('专业数据分析仅限 VIP/管理员使用');
+          return;
+        }
+        const season = document.getElementById('seasonSelect').value;
+        const teamName = document.getElementById('proTeamSelect').value;
+        if(!season){
+          statusEl.textContent = '请先选择赛季';
+          return;
+        }
+        if(!teamName){
+          statusEl.textContent = '请选择球队';
+          return;
+        }
+        statusEl.textContent = '计算中...';
+        resultEl.innerHTML = '';
+        logEl.innerHTML = '';
+        try{
+          const res = await fetch(`/api/pro_metrics?season=${encodeURIComponent(season)}&team_name=${encodeURIComponent(teamName)}`,{
+            headers:{'Authorization':`Bearer ${token}`}
+          });
+          const data = await res.json();
+          if(!res.ok){
+            statusEl.textContent = '计算失败: '+(data.error||res.status);
+            return;
+          }
+          renderProMetrics(data);
+        }catch(e){
+          statusEl.textContent = '网络错误: '+e;
+        }
+      }
+
+      document.getElementById('calcProMetricsBtn').addEventListener('click', loadProMetrics);
     // --- Modal helpers ---
     function showBackdrop(id){document.getElementById(id).style.display='flex'}
     function hideBackdrop(id){document.getElementById(id).style.display='none'}
