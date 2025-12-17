@@ -2,10 +2,12 @@
 import secrets
 import os
 from pathlib import Path
+from datetime import datetime
 
 from flask import Flask, jsonify, request
 from flask import send_from_directory
-from sqlalchemy import or_
+from sqlalchemy import or_, func
+from sqlalchemy.exc import IntegrityError
 from web import webui
 
 from core.db import SessionLocal
@@ -20,6 +22,7 @@ matplotlib.rcParams['font.sans-serif'] = ['SimHei']  # 指定为黑体
 matplotlib.rcParams['axes.unicode_minus'] = False    # 负号正常显示
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 from flask import send_file
 @app.route('/api/team_stats_plot')
 def team_stats_plot():
@@ -58,6 +61,7 @@ def team_stats_plot():
         ax1.set_xlabel('赛季')
         ax1.set_ylabel('排名')
         ax1.invert_yaxis()
+        ax1.yaxis.set_major_locator(MaxNLocator(integer=True))
         ax1.grid(True, linestyle='--', alpha=0.5)
         ax2.plot(seasons, gf, marker='o', color='#43a047', label='进球')
         ax2.plot(seasons, ga, marker='o', color='#e53935', label='失球')
@@ -92,15 +96,21 @@ def get_players_for_team(session, team_id: int):
     )
     result = []
     for p in rows:
-        result.append({
-            "id": p.id,
-            "first_name": p.first_name,
-            "last_name": p.last_name,
-            "shirt_no": p.shirt_no,
-            "birth_date": p.birth_date.isoformat() if p.birth_date else None,
-            "position": p.position,
-        })
+        result.append(serialize_player(p))
     return result
+
+
+def serialize_player(p: Player):
+    """Serialize a Player ORM object to dict."""
+    return {
+        "id": p.id,
+        "first_name": p.first_name,
+        "last_name": p.last_name,
+        "shirt_no": p.shirt_no,
+        "birth_date": p.birth_date.isoformat() if p.birth_date else None,
+        "position": p.position,
+        "team_id": p.team_id,
+    }
 
 
 def calculate_pythagorean_metrics(gf: int, ga: int, played: int, points: int, exponent: float = 2.7):
@@ -191,6 +201,22 @@ def get_auth_user(return_session: bool = False):
         return user, session
     session.close()
     return user
+
+
+def require_admin_session():
+    """
+    Ensure the requester is an admin.
+    Returns (user, session, error_response_or_None).
+    Caller must close session when error_response is None.
+    """
+    auth = get_auth_user(return_session=True)
+    if not auth:
+        return None, None, (jsonify({"error": "missing or invalid token"}), 401)
+    user, session = auth
+    if not user or user.role != "admin":
+        session.close()
+        return None, None, (jsonify({"error": "admin access required"}), 403)
+    return user, session, None
 
 
 @app.route("/api/search/player", methods=["GET"])
@@ -436,7 +462,21 @@ def api_wallpapers():
     return jsonify({"images": files})
 
 
-# 上传头像
+@app.route("/api/teams", methods=["GET"])
+def api_list_teams():
+    """Return all teams (id + name), sorted by name."""
+    session = SessionLocal()
+    try:
+        teams = session.query(Team).order_by(Team.name.asc()).all()
+        return jsonify({
+            "count": len(teams),
+            "teams": [{"id": t.id, "name": t.name} for t in teams],
+        })
+    finally:
+        session.close()
+
+
+# ä¸Šä¼ å¤´åƒ
 @app.route("/api/me/avatar", methods=["POST"])
 def api_update_avatar():
     auth = get_auth_user(return_session=True)
@@ -655,6 +695,506 @@ def api_team_profile():
         return jsonify(payload)
     finally:
         session.close()
+
+
+@app.route("/api/admin/teams", methods=["POST"])
+def api_admin_create_team():
+    """Admin: create a new team."""
+    _, session, error = require_admin_session()
+    if error:
+        return error
+    data = request.json or {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "team name required"}), 400
+    try:
+        team = Team(name=name)
+        session.add(team)
+        session.commit()
+        session.refresh(team)
+        season_override = data.get("season_end_year")
+        stats_payload = data.get("stats") or {}
+        stats = _create_default_stats_for_latest_season(
+            session,
+            team.id,
+            stats_payload=stats_payload,
+            season_year_override=season_override
+        )
+        session.commit()
+        response = {"id": team.id, "name": team.name}
+        if stats:
+            response["default_stats"] = {
+                "season": session.query(Season).get(stats.season_id).end_year if stats else None,
+                "position": stats.position,
+                "played": stats.played,
+                "points": stats.points,
+                "won": stats.won,
+                "drawn": stats.drawn,
+                "lost": stats.lost,
+                "gf": stats.gf,
+                "ga": stats.ga,
+                "gd": stats.gd,
+            }
+        return jsonify({"msg": "team created", "team": response}), 201
+    except IntegrityError:
+        session.rollback()
+        return jsonify({"error": "team name already exists"}), 409
+    finally:
+        session.close()
+
+
+@app.route("/api/admin/teams/<int:team_id>", methods=["PUT"])
+def api_admin_update_team(team_id: int):
+    """Admin: rename existing team."""
+    _, session, error = require_admin_session()
+    if error:
+        return error
+    data = request.json or {}
+    new_name = (data.get("name") or "").strip()
+    if not new_name:
+        return jsonify({"error": "new name required"}), 400
+    try:
+        team = session.query(Team).get(team_id)
+        if not team:
+            return jsonify({"error": "team not found"}), 404
+        team.name = new_name
+        session.commit()
+        return jsonify({"msg": "team updated", "team": {"id": team.id, "name": team.name}})
+    except IntegrityError:
+        session.rollback()
+        return jsonify({"error": "team name already exists"}), 409
+    finally:
+        session.close()
+
+
+@app.route("/api/admin/teams/<int:team_id>", methods=["DELETE"])
+def api_admin_delete_team(team_id: int):
+    """Admin: delete a team and its related stats/players."""
+    _, session, error = require_admin_session()
+    if error:
+        return error
+    try:
+        team = session.query(Team).get(team_id)
+        if not team:
+            return jsonify({"error": "team not found"}), 404
+        session.delete(team)
+        session.commit()
+        return jsonify({"msg": "team deleted", "id": team_id, "name": team.name})
+    finally:
+        session.close()
+
+
+@app.route("/api/admin/players", methods=["GET"])
+def api_admin_list_players():
+    """Admin: list players by team_id."""
+    _, session, error = require_admin_session()
+    if error:
+        return error
+    team_id = request.args.get("team_id", type=int)
+    if not team_id:
+        return jsonify({"error": "team_id required"}), 400
+    try:
+        team = session.query(Team).get(team_id)
+        if not team:
+            return jsonify({"error": "team not found"}), 404
+        players = get_players_for_team(session, team_id)
+        return jsonify({"team": {"id": team.id, "name": team.name}, "count": len(players), "players": players})
+    finally:
+        session.close()
+
+
+def _load_team(session, team_id: int):
+    if team_id is None:
+        return None
+    try:
+        tid = int(team_id)
+    except (TypeError, ValueError):
+        return None
+    return session.query(Team).get(tid)
+
+
+def _parse_birth_date(date_str):
+    if not date_str:
+        return None
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+
+def _coerce_shirt_no(val):
+    if val is None or val == "":
+        return None
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return None
+
+
+def _coerce_int(val, default=None):
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return default
+
+
+def _ensure_no_player_conflicts(session, team_id: int, first_name: str, last_name: str, shirt_no, exclude_player_id=None):
+    """Raise conflict if same name or same shirt number exists in team."""
+    # Same name
+    q_name = session.query(Player).filter_by(team_id=team_id, first_name=first_name, last_name=last_name)
+    if exclude_player_id:
+        q_name = q_name.filter(Player.id != exclude_player_id)
+    if session.query(q_name.exists()).scalar():
+        return {"error": "player with same name already exists in this team"}
+
+    # Same shirt number (if provided)
+    if shirt_no is not None:
+        q_no = session.query(Player).filter_by(team_id=team_id, shirt_no=shirt_no)
+        if exclude_player_id:
+            q_no = q_no.filter(Player.id != exclude_player_id)
+        if session.query(q_no.exists()).scalar():
+            return {"error": "shirt number already used in this team"}
+    return None
+
+
+def _int_or_default(val, default=0):
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return default
+
+
+def _get_or_create_season(session, end_year: int):
+    if end_year is None:
+        return None
+    season = session.query(Season).filter_by(end_year=end_year).first()
+    if season:
+        return season
+    name = f"{end_year-1}-{end_year}"
+    season = Season(end_year=end_year, name=name)
+    session.add(season)
+    try:
+        session.flush()
+        return season
+    except IntegrityError:
+        session.rollback()
+        return session.query(Season).filter_by(end_year=end_year).first()
+
+
+def _parse_stats_payload(session, season_id: int, stats_payload: dict):
+    """Normalize stats payload and compute position if missing."""
+    stats_payload = stats_payload or {}
+    played = _int_or_default(stats_payload.get("played"), 0)
+    won = _int_or_default(stats_payload.get("won"), 0)
+    drawn = _int_or_default(stats_payload.get("drawn"), 0)
+    lost = _int_or_default(stats_payload.get("lost"), 0)
+    gf = _int_or_default(stats_payload.get("gf"), 0)
+    ga = _int_or_default(stats_payload.get("ga"), 0)
+    gd = stats_payload.get("gd")
+    points = _int_or_default(stats_payload.get("points"), 0)
+
+    if gd is None:
+        gd = gf - ga
+    else:
+        try:
+            gd = int(gd)
+        except (TypeError, ValueError):
+            gd = gf - ga
+
+    pos_from_payload = stats_payload.get("position")
+    position = None
+    if pos_from_payload is not None:
+        try:
+            position = int(pos_from_payload)
+        except (TypeError, ValueError):
+            position = None
+    if position is None:
+        max_pos = session.query(func.max(TeamSeasonStats.position)).filter_by(season_id=season_id).scalar()
+        position = (max_pos or 0) + 1
+
+    return {
+        "played": played,
+        "won": won,
+        "drawn": drawn,
+        "lost": lost,
+        "gf": gf,
+        "ga": ga,
+        "gd": gd,
+        "points": points,
+        "position": position,
+    }
+
+
+def _create_default_stats_for_latest_season(session, team_id: int, stats_payload=None, season_year_override=None):
+    """
+    Create a TeamSeasonStats row for target season (prefer 2025 unless overridden).
+    If stats_payload provided, use those numbers; otherwise default to zeros.
+    """
+    target_end_year = season_year_override or 2025
+
+    season = _get_or_create_season(session, target_end_year)
+    if not season:
+        # fallback to latest existing
+        season = session.query(Season).order_by(Season.end_year.desc()).first()
+        if not season:
+            return None
+
+    exists = session.query(TeamSeasonStats).filter_by(team_id=team_id, season_id=season.id).first()
+    if exists:
+        return exists
+    parsed = _parse_stats_payload(session, season.id, stats_payload or {})
+
+    stats = TeamSeasonStats(
+        season_id=season.id,
+        team_id=team_id,
+        position=parsed["position"],
+        played=parsed["played"],
+        won=parsed["won"],
+        drawn=parsed["drawn"],
+        lost=parsed["lost"],
+        gf=parsed["gf"],
+        ga=parsed["ga"],
+        gd=parsed["gd"],
+        points=parsed["points"],
+        notes="auto-created"
+    )
+    session.add(stats)
+    return stats
+
+
+@app.route("/api/admin/players", methods=["POST"])
+def api_admin_create_player():
+    """Admin: create a player."""
+    _, session, error = require_admin_session()
+    if error:
+        return error
+    data = request.json or {}
+    first_name = (data.get("first_name") or "").strip()
+    last_name = (data.get("last_name") or "").strip()
+    team_id = data.get("team_id")
+    if not (first_name and last_name and team_id):
+        return jsonify({"error": "first_name, last_name and team_id are required"}), 400
+    team = _load_team(session, team_id)
+    if not team:
+        return jsonify({"error": "team not found"}), 404
+
+    shirt_no = _coerce_shirt_no(data.get("shirt_no"))
+    if data.get("shirt_no") not in (None, "", shirt_no) and shirt_no is None:
+        return jsonify({"error": "invalid shirt_no"}), 400
+    conflict = _ensure_no_player_conflicts(session, team.id, first_name, last_name, shirt_no)
+    if conflict:
+        return jsonify(conflict), 409
+
+    player = Player(
+        first_name=first_name,
+        last_name=last_name,
+        team_id=team.id,
+        position=(data.get("position") or "").strip() or None,
+        shirt_no=shirt_no,
+        birth_date=_parse_birth_date(data.get("birth_date")),
+    )
+
+    try:
+        session.add(player)
+        session.commit()
+        session.refresh(player)
+        return jsonify({"msg": "player created", "player": serialize_player(player)}), 201
+    except IntegrityError:
+        session.rollback()
+        return jsonify({"error": "player already exists for this team (name/number)"}), 409
+    finally:
+        session.close()
+
+
+@app.route("/api/admin/players/<int:player_id>", methods=["PUT"])
+def api_admin_update_player(player_id: int):
+    """Admin: update an existing player."""
+    _, session, error = require_admin_session()
+    if error:
+        return error
+    data = request.json or {}
+    try:
+        player = session.query(Player).get(player_id)
+        if not player:
+            return jsonify({"error": "player not found"}), 404
+
+        new_team_id = player.team_id
+        if "first_name" in data:
+            player.first_name = (data.get("first_name") or "").strip() or player.first_name
+        if "last_name" in data:
+            player.last_name = (data.get("last_name") or "").strip() or player.last_name
+        if "team_id" in data:
+            team = _load_team(session, data.get("team_id"))
+            if not team:
+                return jsonify({"error": "team not found"}), 404
+            new_team_id = team.id
+        if "position" in data:
+            player.position = (data.get("position") or "").strip() or None
+        if "shirt_no" in data:
+            parsed = _coerce_shirt_no(data.get("shirt_no"))
+            if data.get("shirt_no") not in (None, "", parsed) and parsed is None:
+                return jsonify({"error": "invalid shirt_no"}), 400
+            player.shirt_no = parsed
+        if "birth_date" in data:
+            player.birth_date = _parse_birth_date(data.get("birth_date"))
+
+        conflict = _ensure_no_player_conflicts(session, new_team_id, player.first_name, player.last_name, player.shirt_no, exclude_player_id=player.id)
+        if conflict:
+            session.rollback()
+            return jsonify(conflict), 409
+        player.team_id = new_team_id
+
+        session.commit()
+        return jsonify({"msg": "player updated", "player": serialize_player(player)})
+    except IntegrityError:
+        session.rollback()
+        return jsonify({"error": "player already exists for this team (name/number)"}), 409
+    finally:
+        session.close()
+
+
+@app.route("/api/admin/players/<int:player_id>", methods=["DELETE"])
+def api_admin_delete_player(player_id: int):
+    """Admin: delete a player."""
+    _, session, error = require_admin_session()
+    if error:
+        return error
+    try:
+        player = session.query(Player).get(player_id)
+        if not player:
+            return jsonify({"error": "player not found"}), 404
+        session.delete(player)
+        session.commit()
+        return jsonify({"msg": "player deleted", "id": player_id})
+    finally:
+        session.close()
+
+
+@app.route("/api/admin/team_stats", methods=["POST"])
+def api_admin_upsert_team_stats():
+    """
+    Admin: create or update a team's stats for a specific season.
+    Body:
+      - team_id (preferred) or team_name
+      - season_end_year (required)
+      - stats: {played, won, drawn, lost, gf, ga, gd?, points, position?}
+    """
+    _, session, error = require_admin_session()
+    if error:
+        return error
+    data = request.json or {}
+    team_id = data.get("team_id")
+    team_name = data.get("team_name")
+    season_year = data.get("season_end_year")
+    if not season_year:
+        return jsonify({"error": "season_end_year required"}), 400
+    team = _load_team(session, team_id) if team_id else session.query(Team).filter_by(name=team_name).first()
+    if not team:
+        return jsonify({"error": "team not found"}), 404
+
+    season = _get_or_create_season(session, _coerce_int(season_year))
+    if not season:
+        return jsonify({"error": "season not found or failed to create"}), 400
+
+    stats_payload = data.get("stats") or {}
+    parsed = _parse_stats_payload(session, season.id, stats_payload)
+
+    stats_row = (
+        session.query(TeamSeasonStats)
+        .filter_by(team_id=team.id, season_id=season.id)
+        .first()
+    )
+    created = False
+    if stats_row:
+        stats_row.played = parsed["played"]
+        stats_row.won = parsed["won"]
+        stats_row.drawn = parsed["drawn"]
+        stats_row.lost = parsed["lost"]
+        stats_row.gf = parsed["gf"]
+        stats_row.ga = parsed["ga"]
+        stats_row.gd = parsed["gd"]
+        stats_row.points = parsed["points"]
+        stats_row.position = parsed["position"]
+    else:
+        stats_row = TeamSeasonStats(
+            team_id=team.id,
+            season_id=season.id,
+            position=parsed["position"],
+            played=parsed["played"],
+            won=parsed["won"],
+            drawn=parsed["drawn"],
+            lost=parsed["lost"],
+            gf=parsed["gf"],
+            ga=parsed["ga"],
+            gd=parsed["gd"],
+            points=parsed["points"],
+        )
+        session.add(stats_row)
+        created = True
+
+    session.commit()
+    return jsonify({
+        "msg": "created" if created else "updated",
+        "team": {"id": team.id, "name": team.name},
+        "season": season.end_year,
+        "stats": {
+            "position": stats_row.position,
+            "played": stats_row.played,
+            "won": stats_row.won,
+            "drawn": stats_row.drawn,
+            "lost": stats_row.lost,
+            "gf": stats_row.gf,
+            "ga": stats_row.ga,
+            "gd": stats_row.gd,
+            "points": stats_row.points,
+        }
+    })
+
+
+@app.route("/api/admin/team_stats", methods=["GET"])
+def api_admin_get_team_stats():
+    """
+    Admin: fetch an existing team's stats for a season.
+    Query:
+      - team_id (preferred) or team_name
+      - season_end_year (required)
+    """
+    _, session, error = require_admin_session()
+    if error:
+        return error
+    team_id = request.args.get("team_id", type=int)
+    team_name = request.args.get("team_name")
+    season_year = request.args.get("season_end_year", type=int)
+    if not season_year:
+        return jsonify({"error": "season_end_year required"}), 400
+    team = _load_team(session, team_id) if team_id else session.query(Team).filter_by(name=team_name).first()
+    if not team:
+        return jsonify({"error": "team not found"}), 404
+    season = session.query(Season).filter_by(end_year=season_year).first()
+    if not season:
+        return jsonify({"error": "season not found"}), 404
+    stats_row = (
+        session.query(TeamSeasonStats)
+        .filter_by(team_id=team.id, season_id=season.id)
+        .first()
+    )
+    if not stats_row:
+        return jsonify({"error": "stats not found"}), 404
+    return jsonify({
+        "team": {"id": team.id, "name": team.name},
+        "season": season.end_year,
+        "stats": {
+            "position": stats_row.position,
+            "played": stats_row.played,
+            "won": stats_row.won,
+            "drawn": stats_row.drawn,
+            "lost": stats_row.lost,
+            "gf": stats_row.gf,
+            "ga": stats_row.ga,
+            "gd": stats_row.gd,
+            "points": stats_row.points,
+        }
+    })
 
 
 @app.route("/api/register", methods=["POST"])

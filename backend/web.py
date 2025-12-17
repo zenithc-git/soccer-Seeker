@@ -79,11 +79,6 @@ webui = """
       .avatar img{width:100%;height:100%;object-fit:cover}
       .user-meta{display:flex;flex-direction:column;line-height:1.2}
       .user-meta .role{font-size:12px;color:#475569}
-      .user-actions-wrapper{position:relative;display:flex;align-items:flex-start}
-      .user-menu{position:absolute;top:62px;right:0;min-width:220px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,0.14);padding:10px;display:none;flex-direction:column;gap:8px;z-index:6}
-      .user-menu .menu-btn{width:100%;text-align:left;padding:9px 12px;border:none;border-radius:8px;background:#eef2ff;color:#0d47a1;font-weight:700;cursor:pointer}
-      .user-menu .menu-btn.secondary{background:#f1f5f9;color:#475569;font-weight:600}
-      .user-menu .menu-divider{height:1px;background:#e2e8f0;margin:4px 0}
       .brand{display:flex;align-items:center;gap:12px}
       .brand-logo{width:54px;height:54px;object-fit:contain;border-radius:12px;background:#fff;padding:6px;box-shadow:0 6px 16px rgba(0,0,0,0.08);border:1px solid #e2e8f0}
       .user-modal{max-width:520px}
@@ -124,24 +119,15 @@ webui = """
             <p style="color:#e3f2fd;margin-bottom:6px">快速查看赛季积分榜；主榜按积分，其余按进球/丢球/净胜。</p>
           </div>
         </div>
-                <div class="user-actions-wrapper">
-          <div id="userBadge" class="user-chip" title="??????">
-            <div class="avatar" id="userBadgeAvatar">G</div>
-            <div class="user-meta">
-              <span id="userBadgeName">??</span>
-              <span class="role" id="userBadgeRole">???</span>
-            </div>
-          </div>
-          <div id="userMenu" class="user-menu">
-            <button id="openChoice" class="menu-btn">????? ??/???</button>
-            <button id="userMenuInfo" class="menu-btn secondary">??????</button>
-            <div class="menu-divider"></div>
-            <button id="getAllUsersBtn" class="menu-btn secondary">??????</button>
-            <button id="getUserInfoBtn" class="menu-btn secondary">????????</button>
-            <button id="deleteAccountBtn" class="menu-btn secondary">????????</button>
-            <button id="logoutBtn" class="menu-btn secondary">????</button>
+        <div id="userBadge" class="user-chip" title="查看账号信息">
+          <div class="avatar" id="userBadgeAvatar">G</div>
+          <div class="user-meta">
+            <span id="userBadgeName">访客</span>
+            <span class="role" id="userBadgeRole">未登录</span>
           </div>
         </div>
+      </div>
+
       <div class="layout-grid">
         <div class="column-left">
           <div class="search-panel">
@@ -220,7 +206,109 @@ webui = """
           </div>
         </div>
 
-                <!-- Choice modal -->
+        <div class="card user-wide">
+          <h3>账户与用户操作</h3>
+          <div style="margin:8px 0" id="authActions">
+            <button id="openChoice" class="btn">开始（选择 注册/登录 ）</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+            <button id="logoutBtn" class="btn secondary">退出登录</button>
+            <button id="getAllUsersBtn" class="btn">查看所有用户</button>
+            <button id="getUserInfoBtn" class="btn">获取当前用户信息</button>
+            <button id="deleteAccountBtn" class="btn secondary">删除当前用户账号</button>
+          </div>
+          <div id="userInfoDisplay" class="muted" style="margin-top:12px;white-space:pre-wrap"></div>
+        </div>
+
+        <div class="card user-wide" id="adminPanel" style="display:none">
+          <div class="section-head">
+            <div>
+              <h3>管理员数据维护</h3>
+              <p class="muted">新增/修改球队与球员信息，仅管理员可见</p>
+            </div>
+            <div class="pill info" id="adminPanelTag">需要管理员</div>
+          </div>
+          <div class="admin-grid">
+            <div class="admin-block">
+              <h4>球队管理</h4>
+              <label for="adminTeamName">新增球队名称</label>
+              <input id="adminTeamName" placeholder="例如 Newcastle United">
+              <div class="muted" style="margin-top:4px;font-size:12px">可选：填写赛季与数据（默认 2025 赛季，数据为 0 并放末尾）</div>
+              <div class="admin-grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-top:6px">
+                <div>
+                  <label for="adminTeamSeason">赛季(末年)</label>
+                  <input id="adminTeamSeason" placeholder="2025" value="2025">
+                </div>
+                <div>
+                  <label for="adminTeamPosition">排名</label>
+                  <input id="adminTeamPosition" placeholder="留空则末尾" type="number">
+                </div>
+                <div>
+                  <label for="adminTeamPlayed">场次</label>
+                  <input id="adminTeamPlayed" type="number" placeholder="0">
+                </div>
+                <div>
+                  <label for="adminTeamWon">胜</label>
+                  <input id="adminTeamWon" type="number" placeholder="0">
+                </div>
+                <div>
+                  <label for="adminTeamDrawn">平</label>
+                  <input id="adminTeamDrawn" type="number" placeholder="0">
+                </div>
+                <div>
+                  <label for="adminTeamLost">负</label>
+                  <input id="adminTeamLost" type="number" placeholder="0">
+                </div>
+                <div>
+                  <label for="adminTeamGF">进球</label>
+                  <input id="adminTeamGF" type="number" placeholder="0">
+                </div>
+                <div>
+                  <label for="adminTeamGA">失球</label>
+                  <input id="adminTeamGA" type="number" placeholder="0">
+                </div>
+                <div>
+                  <label for="adminTeamPoints">积分</label>
+                  <input id="adminTeamPoints" type="number" placeholder="0">
+                </div>
+              </div>
+              <button id="adminCreateTeamBtn" class="btn" style="margin-top:8px">创建球队</button>
+              <label for="adminTeamSelect" style="margin-top:12px">重命名已存在球队</label>
+              <select id="adminTeamSelect"></select>
+              <input id="adminRenameInput" placeholder="输入新名称" style="margin-top:6px">
+              <button id="adminRenameTeamBtn" class="btn secondary" style="margin-top:8px">更新名称</button>
+              <label for="adminStatsTeamSelect" style="margin-top:12px">选择要维护赛季数据的球队</label>
+              <select id="adminStatsTeamSelect"></select>
+              <button id="adminSaveStatsBtn" class="btn" style="margin-top:8px">保存赛季数据(下拉选择)</button>
+              <button id="adminLoadStatsBtn" class="btn secondary" style="margin-top:8px">读取赛季数据(下拉选择)</button>
+              <div id="adminTeamStatus" class="muted" style="margin-top:8px"></div>
+            </div>
+            <div class="admin-block">
+              <h4>球员管理</h4>
+              <label for="adminPlayerTeamSelect">选择球队</label>
+              <select id="adminPlayerTeamSelect"></select>
+              <div class="admin-list" id="adminPlayerList"><div class="muted" style="padding:8px 10px">选择球队后显示球员</div></div>
+              <label style="margin-top:10px">球员信息</label>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">
+                <input id="adminPlayerFirstName" placeholder="名 (first name)">
+                <input id="adminPlayerLastName" placeholder="姓 (last name)">
+                <input id="adminPlayerPosition" placeholder="位置, 如 FW">
+                <input id="adminPlayerNumber" placeholder="球衣号 (可选)" type="number">
+                <input id="adminPlayerBirth" placeholder="生日 YYYY-MM-DD">
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+                <button id="adminSavePlayerBtn" class="btn">保存 / 新增</button>
+                <button id="adminResetPlayerBtn" class="btn secondary">清空</button>
+                <button id="adminDeletePlayerBtn" class="btn secondary" disabled>删除</button>
+              </div>
+              <div id="adminPlayerStatus" class="muted" style="margin-top:8px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+        <!-- Choice modal -->
     <div id="choiceBackdrop" class="modal-backdrop">
       <div class="modal">
         <h2>请登录</h2>
@@ -832,7 +920,7 @@ webui = """
     function showBackdrop(id){document.getElementById(id).style.display='flex'}
     function hideBackdrop(id){document.getElementById(id).style.display='none'}
 
-    document.getElementById('openChoice').addEventListener('click', function(){ closeUserMenu(); showBackdrop('choiceBackdrop') })
+    document.getElementById('openChoice').addEventListener('click', function(){ showBackdrop('choiceBackdrop') })
     document.getElementById('choiceRegister').addEventListener('click', function(){ hideBackdrop('choiceBackdrop'); showBackdrop('registerBackdrop') })
     document.getElementById('choiceLogin').addEventListener('click', function(){ hideBackdrop('choiceBackdrop'); showBackdrop('loginBackdrop') })
 
@@ -876,7 +964,6 @@ webui = """
     // Admin panel handlers
     document.getElementById('adminCreateTeamBtn').addEventListener('click', createTeam);
     document.getElementById('adminRenameTeamBtn').addEventListener('click', renameTeam);
-    document.getElementById('adminDeleteTeamBtn').addEventListener('click', deleteTeam);
     document.getElementById('adminSaveStatsBtn').addEventListener('click', saveTeamStats);
     document.getElementById('adminLoadStatsBtn').addEventListener('click', loadTeamStatsForAdmin);
     document.getElementById('adminPlayerTeamSelect').addEventListener('change', function(e){ resetAdminPlayerForm(); loadAdminPlayers(e.target.value); });
@@ -884,35 +971,25 @@ webui = """
     document.getElementById('adminDeletePlayerBtn').addEventListener('click', deleteAdminPlayer);
     document.getElementById('adminResetPlayerBtn').addEventListener('click', resetAdminPlayerForm);
 
-    const userMenu = document.getElementById('userMenu');
-    function closeUserMenu(){ if(userMenu){ userMenu.style.display='none'; } }
-    function toggleUserMenu(){
-      if(!userMenu) return;
-      userMenu.style.display = userMenu.style.display === 'flex' ? 'none' : 'flex';
-    }
-    document.getElementById('userBadge').addEventListener('click', function(e){
-      e.stopPropagation();
-      toggleUserMenu();
-    });
-    document.addEventListener('click', function(e){
-      if(userMenu && !e.target.closest('.user-actions-wrapper')){
-        closeUserMenu();
-      }
-    });
-    document.getElementById('userMenuInfo').addEventListener('click', function(){
-      closeUserMenu();
-      openUserModal();
-    });
+    // User badge + modal
+    document.getElementById('userBadge').addEventListener('click', openUserModal);
     document.getElementById('userModalClose').addEventListener('click', function(){ hideBackdrop('userModal') });
     document.getElementById('userModal').addEventListener('click', function(e){ if(e.target.id === 'userModal') hideBackdrop('userModal'); });
     document.getElementById('uploadAvatarBtn').addEventListener('click', uploadAvatar);
     document.getElementById('changePwdBtn').addEventListener('click', changePassword);
 
-    // 登录/登出按钮显示控制（菜单内）
+    // 登录/登出按钮显示控制
     function syncAuthUI(){
       const token = localStorage.getItem('token');
+      const authActions = document.getElementById('authActions');
       const logoutBtn = document.getElementById('logoutBtn');
-      if(logoutBtn){ logoutBtn.style.display = token ? '' : 'none'; }
+      if(token){
+        authActions.style.display = 'none';
+        logoutBtn.style.display = '';
+      }else{
+        authActions.style.display = '';
+        logoutBtn.style.display = '';
+      }
       updateUserBadge();
     }
 
@@ -975,12 +1052,11 @@ webui = """
     }
 
     function updateUserBadge(){
-      const name = currentUser?.name || '??';
-      const role = currentUser?.role || '???';
+      const name = currentUser?.name || '访客';
+      const role = currentUser?.role || '未登录';
       document.getElementById('userBadgeName').textContent = name;
       document.getElementById('userBadgeRole').textContent = role;
       setAvatar(document.getElementById('userBadgeAvatar'), currentUser?.avatar_url, name);
-      closeUserMenu();
       updateAdminPanelVisibility();
     }
 
@@ -1332,41 +1408,6 @@ webui = """
       }
     }
 
-    async function deleteTeam(){
-      if(!isAdmin()){
-        alert('仅管理员可操作');
-        return;
-      }
-      const token = requireAuth();
-      if(!token) return;
-      const teamId = document.getElementById('adminTeamSelect').value || document.getElementById('adminStatsTeamSelect').value;
-      if(!teamId){
-        setAdminStatus('adminTeamStatus', '请选择要删除的球队');
-        return;
-      }
-      if(!confirm('确认删除该球队及其赛季数据、球员吗？此操作不可恢复')) return;
-      setAdminStatus('adminTeamStatus', '删除中...');
-      try{
-        const res = await fetch(`/api/admin/teams/${teamId}`,{
-          method:'DELETE',
-          headers:{'Authorization':`Bearer ${token}`}
-        });
-        const data = await res.json();
-        if(!res.ok){
-          setAdminStatus('adminTeamStatus', '删除失败: '+(data.error||res.status));
-          return;
-        }
-        setAdminStatus('adminTeamStatus', data.msg || '已删除');
-        document.getElementById('adminRenameInput').value = '';
-        await loadAdminTeams();
-        resetAdminPlayerForm();
-        const seasonSelect = document.getElementById('seasonSelect');
-        if(seasonSelect && seasonSelect.value){ await loadTeams(); }
-      }catch(e){
-        setAdminStatus('adminTeamStatus', '网络错误: '+e);
-      }
-    }
-
     async function saveTeamStats(){
       if(!isAdmin()){
         alert('仅管理员可操作');
@@ -1374,7 +1415,7 @@ webui = """
       }
       const token = requireAuth();
       if(!token) return;
-      const teamId = document.getElementById('adminStatsTeamSelect').value || document.getElementById('adminTeamSelect').value;
+      const teamId = document.getElementById('adminTeamSelect').value;
       if(!teamId){
         setAdminStatus('adminTeamStatus', '请选择要更新的球队');
         return;
@@ -1438,7 +1479,7 @@ webui = """
       }
       const token = requireAuth();
       if(!token) return;
-      const teamId = document.getElementById('adminStatsTeamSelect').value || document.getElementById('adminTeamSelect').value;
+      const teamId = document.getElementById('adminTeamSelect').value;
       const season = readNumberInput('adminTeamSeason');
       if(!teamId){
         setAdminStatus('adminTeamStatus', '请选择要读取的球队');
@@ -1574,7 +1615,6 @@ webui = """
 
     // 退出登录
     document.getElementById('logoutBtn').addEventListener('click', function(){
-        closeUserMenu();
         localStorage.removeItem('token');
         alert('已成功退出登录');
         window.location.reload();
