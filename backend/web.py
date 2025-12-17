@@ -1,7 +1,7 @@
 webui = """
     <style>
       *{box-sizing:border-box}
-      body{font-family:Arial,Helvetica,sans-serif;background:#0b1424;color:#0f172a;margin:0;padding:0;position:relative;overflow-x:hidden}
+      body{font-family:Arial,Helvetica,sans-serif;background:#0b1424;color:#0f172a;margin:0;padding:0;position:relative;overflow-x:hidden;min-height:100vh}
       a{color:#0d47a1}
       h1,h2,h3,p{margin:0}
       .bg-stage{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
@@ -9,13 +9,12 @@ webui = """
       .bg-layer.active{opacity:1}
       .bg-overlay{position:absolute;inset:0;background:radial-gradient(120% 120% at 50% 20%,rgba(15,23,42,0.35),rgba(10,12,26,0.7));mix-blend-mode:soft-light}
       .bg-noise{position:absolute;inset:0;background-image:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABqUlEQVR4Ae3WTWgTURTG8d+5aZVKsWotRFEYRaL2CgoGVTBooYBWYp5BrRSJgoJoRCsM6iGNFQSC9gi0UFIQLSByiAUUrZKIiIx9H2+0ed6duLN0b3uZO88I+cc7/s6c87/OQJpYqmqMjo7rUwLDsBh2bjx0aNqzpvhrbcZ2eF5UL+e2zEqbcnTkz5nUnf+gz9ClHq1C84EBgbZyRy9EFcQpdgmfsLNtrZzLeKPKP2Iz5cr6ODcFrxvY4a1yZHB6muLLWmE8M+BtNtEsXULtT6dw1qWNch8G7HEbTsl2MAkFRKNYtXLS8E+DEo1CSG36E5KcVl+rcz7q8B6JJb+/pQqhUTzVGqIgaPg4LhwHu0YHcBzpAPyPvMTfi6XjC8d6sl8zqZIlYpbA7rW52YGxT6muL98ilMjaOYm2kOVBz0+mWUX4oMO3jsKK/OFQn1fMrlzlGykWEn7BfoYg/es+QFwGYjj+5B4FqkHEyxNRuELonV1K0mp0D6ItZYttDW0PuNY1/XbtJY6LszIZjph4pTsw0aIT90XKsiHgDvnp/W2gF3jBnxr7AkRE0UvZ15/QAAAABJRU5ErkJggg==');opacity:0.16}
-      .page{max-width:1100px;margin:0 auto;padding:28px 20px 64px;position:relative;z-index:1}
-      .card{background:rgba(255,255,255,0.9);border-radius:14px;padding:18px 20px;box-shadow:0 12px 34px rgba(0,0,0,0.12);margin-bottom:18px;border:1px solid rgba(226,232,240,0.6);backdrop-filter:blur(4px)}
-      .bg-controls{position:fixed;top:14px;right:14px;z-index:1500;display:flex;gap:6px;pointer-events:auto}
-      .bg-btn{padding:8px 10px;border:none;border-radius:10px;background:rgba(255,255,255,0.72);color:#0f172a;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,0.12);backdrop-filter:blur(6px);transition:transform .12s ease,box-shadow .12s ease}
-      .bg-btn:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(0,0,0,0.16)}
-      .bg-btn:active{transform:translateY(0)}
-      .search-panel{background:rgba(255,255,255,0.92);border:1px solid rgba(226,232,240,0.7);border-radius:14px;padding:12px 14px;box-shadow:0 10px 26px rgba(0,0,0,0.12);display:flex;flex-direction:column;gap:8px;max-width:760px;margin-bottom:12px}
+      .page{max-width:1600px;width:96vw;margin:0 auto;padding:20px 20px 72px;position:relative;z-index:1}
+      .layout-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+      .column-left,.column-right{display:flex;flex-direction:column;gap:18px}
+      .user-wide{grid-column:1 / -1}
+      .card{background:rgba(255,255,255,0.9);border-radius:14px;padding:18px 20px;box-shadow:0 12px 34px rgba(0,0,0,0.12);margin:0;border:1px solid rgba(226,232,240,0.6);backdrop-filter:blur(4px)}
+      .search-panel{background:rgba(255,255,255,0.92);border:1px solid rgba(226,232,240,0.7);border-radius:14px;padding:12px 14px;box-shadow:0 10px 26px rgba(0,0,0,0.12);display:flex;flex-direction:column;gap:8px;width:100%;max-width:none;margin:0}
       .search-tabs{display:flex;gap:8px}
       .search-tab{padding:8px 12px;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-weight:700;cursor:pointer;transition:all .12s ease}
       .search-tab.active{background:#1976d2;color:#fff;border-color:#1976d2;box-shadow:0 8px 18px rgba(25,118,210,0.22)}
@@ -74,7 +73,7 @@ webui = """
       .log-title{font-weight:700;margin-bottom:6px;font-size:14px}
       .log-line{margin:4px 0;padding:8px;border-radius:10px;background:rgba(255,255,255,0.06)}
       .badge{display:inline-block;padding:6px 10px;border-radius:10px;font-weight:bold;font-size:12px;background:#e2e8f0;color:#0f172a;margin-right:6px}
-      .top-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+      .top-bar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;position:sticky;top:0;z-index:5;padding:12px 0;background:transparent;border-bottom:none;backdrop-filter:none}
       .user-chip{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:999px;background:#e3f2fd;color:#0d47a1;cursor:pointer;border:1px solid #cbd5e1;box-shadow:0 4px 12px rgba(0,0,0,0.08)}
       .avatar{width:42px;height:42px;border-radius:50%;background:#0d47a1;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;overflow:hidden}
       .avatar img{width:100%;height:100%;object-fit:cover}
@@ -84,6 +83,10 @@ webui = """
       .brand-logo{width:54px;height:54px;object-fit:contain;border-radius:12px;background:#fff;padding:6px;box-shadow:0 6px 16px rgba(0,0,0,0.08);border:1px solid #e2e8f0}
       .user-modal{max-width:520px}
       .user-modal .row label{display:block;margin-bottom:4px;color:#475569;font-size:13px}
+      @media(max-width:960px){
+        .layout-grid{grid-template-columns:1fr}
+        .user-wide{grid-column:1}
+      }
       @media(max-width:600px){
         .btn{width:100%}
         .section-head{flex-direction:column;align-items:flex-start}
@@ -96,30 +99,8 @@ webui = """
       <div class="bg-overlay"></div>
       <div class="bg-noise"></div>
     </div>
-    <div class="bg-controls">
-      <button id="bgPrevBtn" class="bg-btn">上一张</button>
-      <button id="bgNextBtn" class="bg-btn">下一张</button>
-    </div>
 
     <div class="page">
-      <div class="search-panel">
-        <div class="search-tabs" role="group" aria-label="搜索类型">
-          <button class="search-tab active" data-type="player" id="tabPlayer">搜球员</button>
-          <button class="search-tab" data-type="team" id="tabTeam">搜球队</button>
-        </div>
-        <div class="search-controls">
-          <input id="searchInput" class="search-input" placeholder="先选择上方类型，再输入关键词" autocomplete="off">
-          <div id="searchSeasonWrap" class="search-season-wrap">
-            <select id="searchSeasonSelect" class="search-select">
-              <option value="">选择年份</option>
-            </select>
-          </div>
-          <button id="searchBtn" class="btn">搜索</button>
-        </div>
-        <div class="search-hint" id="searchHint">先选择“搜球员”或“搜球队”，按回车或搜索键执行；球队搜索需同时选择年份。</div>
-        <div class="muted" id="searchStatus"></div>
-        <div id="searchResults" class="search-results"></div>
-      </div>
       <div class="top-bar">
         <div class="brand">
           <img src="/badges/Premier_League_Logo.svg.png" alt="Premier League" class="brand-logo" onerror="this.style.display='none'">
@@ -137,72 +118,97 @@ webui = """
         </div>
       </div>
 
-      <div class="card" id="standingsCard">
-        <div class="section-head">
-          <div>
-            <h2>积分榜查询</h2>
-            <p class="muted">选择赛季与排序方式，拉取积分/进球/丢球/净胜榜。</p>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <select id="seasonSelect" style="padding:9px 10px;border-radius:8px;border:1px solid #cbd5e1;min-width:120px"></select>
-            <select id="sortSelect" style="padding:9px 10px;border-radius:8px;border:1px solid #cbd5e1;min-width:140px">
-              <option value="points">按积分</option>
-              <option value="goals_for">按进球</option>
-              <option value="goals_against">按丢球</option>
-              <option value="goal_diff">按净胜球</option>
-            </select>
-            <button id="loadStandingsBtn" class="btn">更新榜单</button>
-          </div>
-        </div>
-        <div id="standingsStatus" class="muted" style="margin-top:10px">等待请求...</div>
-        <div id="standingsGrid" class="standings-grid"></div>
-      </div>
-      
-      <div class="card" id="teamStatsCard">
-          <div class="section-head">
-            <div>
-              <h2>球队历年数据可视化</h2>
-              <p class="muted">选择球队，查看其历年排名、进球、失球、净胜球折线图（由后端Python生成图片）</p>
+      <div class="layout-grid">
+        <div class="column-left">
+          <div class="search-panel">
+            <div class="search-tabs" role="group" aria-label="搜索类型">
+              <button class="search-tab active" data-type="player" id="tabPlayer">搜球员</button>
+              <button class="search-tab" data-type="team" id="tabTeam">搜球队</button>
             </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <select id="teamSelect" style="padding:9px 10px;border-radius:8px;border:1px solid #cbd5e1;min-width:160px"></select>
-              <button id="loadTeamStatsBtn" class="btn">显示球队数据</button>
+            <div class="search-controls">
+              <input id="searchInput" class="search-input" placeholder="先选择上方类型，再输入关键词" autocomplete="off">
+              <div id="searchSeasonWrap" class="search-season-wrap">
+                <select id="searchSeasonSelect" class="search-select">
+                  <option value="">选择年份</option>
+                </select>
+              </div>
+              <button id="searchBtn" class="btn">搜索</button>
             </div>
+            <div class="search-hint" id="searchHint">先选择“搜球员”或“搜球队”，按回车或搜索键执行；球队搜索需同时选择年份。</div>
+            <div class="muted" id="searchStatus"></div>
+            <div id="searchResults" class="search-results"></div>
           </div>
-          <div id="teamStatsStatus" class="muted" style="margin-top:10px">等待选择球队...</div>
-          <div id="teamCharts" style="width:100%;max-width:900px;margin:0 auto;text-align:center">
-            <img id="teamStatsImg" style="max-width:100%;display:none" alt="球队历年数据图" />
+
+          <div class="card" id="standingsCard">
+            <div class="section-head">
+              <div>
+                <h2>积分榜查询</h2>
+                <p class="muted">选择赛季与排序方式，拉取积分/进球/丢球/净胜榜。</p>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <select id="seasonSelect" style="padding:9px 10px;border-radius:8px;border:1px solid #cbd5e1;min-width:120px"></select>
+                <select id="sortSelect" style="padding:9px 10px;border-radius:8px;border:1px solid #cbd5e1;min-width:140px">
+                  <option value="points">按积分</option>
+                  <option value="goals_for">按进球</option>
+                  <option value="goals_against">按丢球</option>
+                  <option value="goal_diff">按净胜球</option>
+                </select>
+                <button id="loadStandingsBtn" class="btn">更新榜单</button>
+              </div>
+            </div>
+            <div id="standingsStatus" class="muted" style="margin-top:10px">等待请求...</div>
+            <div id="standingsGrid" class="standings-grid"></div>
           </div>
         </div>
 
-      <div class="card" id="proMetricsCard">
-        <div class="section-head">
-          <div>
-            <h2>专业数据分析 (VIP)</h2>
-            <p class="muted">基于进/失球的预期积分 + AI 风格计算过程</p>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <select id="proTeamSelect" style="padding:9px 10px;border-radius:8px;border:1px solid #cbd5e1;min-width:160px"></select>
-            <button id="calcProMetricsBtn" class="btn">计算预期表现</button>
-          </div>
-        </div>
-        <div id="proMetricsStatus" class="muted" style="margin-top:10px">需登录且 VIP/管理员 可用</div>
-        <div id="proMetricsResult"></div>
-        <div id="proMetricsLog"></div>
-  </div>
+        <div class="column-right">
+          <div class="card" id="teamStatsCard">
+              <div class="section-head">
+                <div>
+                  <h2>球队历年数据可视化</h2>
+                  <p class="muted">选择球队，查看其历年排名、进球、失球、净胜球折线图（由后端Python生成图片）</p>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <select id="teamSelect" style="padding:9px 10px;border-radius:8px;border:1px solid #cbd5e1;min-width:160px"></select>
+                  <button id="loadTeamStatsBtn" class="btn">显示球队数据</button>
+                </div>
+              </div>
+              <div id="teamStatsStatus" class="muted" style="margin-top:10px">等待选择球队...</div>
+              <div id="teamCharts" style="width:100%;max-width:900px;margin:0 auto;text-align:center">
+                <img id="teamStatsImg" style="max-width:100%;display:none" alt="球队历年数据图" />
+              </div>
+            </div>
 
-      <div class="card">
-        <h3>账户与用户操作</h3>
-        <div style="margin:8px 0" id="authActions">
-          <button id="openChoice" class="btn">开始（选择 注册/登录 ）</button>
+          <div class="card" id="proMetricsCard">
+            <div class="section-head">
+              <div>
+                <h2>专业数据分析 (VIP)</h2>
+                <p class="muted">基于进/失球的预期积分 + AI 风格计算过程</p>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <select id="proTeamSelect" style="padding:9px 10px;border-radius:8px;border:1px solid #cbd5e1;min-width:160px"></select>
+                <button id="calcProMetricsBtn" class="btn">计算预期表现</button>
+              </div>
+            </div>
+            <div id="proMetricsStatus" class="muted" style="margin-top:10px">需登录且 VIP/管理员 可用</div>
+            <div id="proMetricsResult"></div>
+            <div id="proMetricsLog"></div>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-          <button id="logoutBtn" class="btn secondary">退出登录</button>
-          <button id="getAllUsersBtn" class="btn">查看所有用户</button>
-          <button id="getUserInfoBtn" class="btn">获取当前用户信息</button>
-          <button id="deleteAccountBtn" class="btn secondary">删除当前用户账号</button>
+
+        <div class="card user-wide">
+          <h3>账户与用户操作</h3>
+          <div style="margin:8px 0" id="authActions">
+            <button id="openChoice" class="btn">开始（选择 注册/登录 ）</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+            <button id="logoutBtn" class="btn secondary">退出登录</button>
+            <button id="getAllUsersBtn" class="btn">查看所有用户</button>
+            <button id="getUserInfoBtn" class="btn">获取当前用户信息</button>
+            <button id="deleteAccountBtn" class="btn secondary">删除当前用户账号</button>
+          </div>
+          <div id="userInfoDisplay" class="muted" style="margin-top:12px;white-space:pre-wrap"></div>
         </div>
-        <div id="userInfoDisplay" class="muted" style="margin-top:12px;white-space:pre-wrap"></div>
       </div>
     </div>
 
@@ -1300,16 +1306,6 @@ webui = """
     document.getElementById('playerDetailBackdrop').addEventListener('click', function(e){ if(e.target.id === 'playerDetailBackdrop') hidePlayerModal(); });
 
       document.getElementById('loadStandingsBtn').addEventListener('click', fetchStandings);
-      document.getElementById('bgPrevBtn').addEventListener('click', function(){
-        stopBgCarousel();
-        showBackgroundAt(bgIndex - 1);
-        if(!reduceMotion){ startBgCarousel(); }
-      });
-      document.getElementById('bgNextBtn').addEventListener('click', function(){
-        stopBgCarousel();
-        showBackgroundAt(bgIndex + 1);
-        if(!reduceMotion){ startBgCarousel(); }
-      });
 
     // 初始加载：直接预取赛季与榜单（无需登录？
     window.addEventListener('load', async function(){ 
