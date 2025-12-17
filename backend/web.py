@@ -24,6 +24,11 @@ webui = """
       .search-select{padding:10px 12px;border-radius:10px;border:1px solid #cbd5e1;min-width:140px;background:#fff}
       .search-hint{color:#475569;font-size:12px}
       .search-season-wrap{display:none;align-items:center;gap:8px}
+      .search-results{margin-top:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px;display:none}
+      .search-result{padding:10px;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;transition:background .1s ease,transform .1s ease}
+      .search-result:hover{background:#e3f2fd;transform:translateY(-1px)}
+      .search-result-title{font-weight:700;color:#0f172a}
+      .search-result-meta{color:#475569;font-size:12px}
       .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#e3f2fd;color:#0d47a1;font-size:12px;font-weight:bold}
       .btn{padding:9px 14px;border:none;border-radius:8px;background:#1976d2;color:#fff;cursor:pointer;font-weight:bold;transition:transform .12s ease,box-shadow .12s ease}
       .btn.secondary{background:#6c757d}
@@ -113,6 +118,7 @@ webui = """
         </div>
         <div class="search-hint" id="searchHint">先选择“搜球员”或“搜球队”，按回车或搜索键执行；球队搜索需同时选择年份。</div>
         <div class="muted" id="searchStatus"></div>
+        <div id="searchResults" class="search-results"></div>
       </div>
       <div class="top-bar">
         <div class="brand">
@@ -318,6 +324,10 @@ webui = """
       let reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       let bgInitialized = false;
       let bgActiveLayer = null;
+      let searchType = 'player';
+      let searchDebounce = null;
+      let lastPlayerResults = [];
+      let lastTeamResults = [];
 
       function setBg(layerEl, url){
         if(!layerEl) return;
@@ -379,6 +389,212 @@ webui = """
 
       function stopBgCarousel(){
         if(bgTimer){ clearInterval(bgTimer); bgTimer = null; }
+      }
+
+      function setSearchType(type){
+        searchType = type;
+        document.querySelectorAll('.search-tab').forEach(btn=>{
+          btn.classList.toggle('active', btn.dataset.type === type);
+        });
+        const seasonWrap = document.getElementById('searchSeasonWrap');
+        const input = document.getElementById('searchInput');
+        const hint = document.getElementById('searchHint');
+        if(!seasonWrap || !input || !hint) return;
+        if(type === 'team'){
+          seasonWrap.style.display = 'flex';
+          input.placeholder = '输入球队名称（需选择年份）';
+          hint.textContent = '搜球队：请输入队名，并选择年份后回车或点击搜索。';
+        }else{
+          seasonWrap.style.display = 'none';
+          input.placeholder = '输入球员名字，例如 harry kane';
+          hint.textContent = '搜球员：模糊匹配姓名，不区分大小写。';
+        }
+      }
+
+      function syncSearchSeasonOptions(){
+        const seasonSelect = document.getElementById('seasonSelect');
+        const searchSelect = document.getElementById('searchSeasonSelect');
+        if(!seasonSelect || !searchSelect) return;
+        const previous = searchSelect.value;
+        searchSelect.innerHTML = '<option value=\"\">选择年份</option>';
+        Array.from(seasonSelect.options).forEach(opt=>{
+          searchSelect.appendChild(opt.cloneNode(true));
+        });
+        if(seasonSelect.value){
+          searchSelect.value = seasonSelect.value;
+        }else if(previous){
+          searchSelect.value = previous;
+        }
+      }
+
+      function clearSearchResults(){
+        const list = document.getElementById('searchResults');
+        if(list){
+          list.innerHTML = '';
+          list.style.display = 'none';
+        }
+      }
+
+      function renderSearchResults(type, results, seasonText=''){
+        const list = document.getElementById('searchResults');
+        const statusEl = document.getElementById('searchStatus');
+        if(!list || !statusEl) return;
+        if(!results || results.length === 0){
+          list.innerHTML = '<div class="muted">暂无匹配结果</div>';
+          list.style.display = 'block';
+          return;
+        }
+        list.innerHTML = '';
+        results.forEach((item)=>{
+          const row = document.createElement('div');
+          row.className = 'search-result';
+          if(type === 'player'){
+            const name = `${(item.first_name||'').trim()} ${(item.last_name||'').trim()}`.trim();
+            row.innerHTML = `
+              <div>
+                <div class="search-result-title">${name || '未命名球员'}</div>
+                <div class="search-result-meta">${item.team_name || '未知球队'} · ${item.position || '未知位置'}${(item.shirt_no||item.shirt_no===0)?' · #'+item.shirt_no:''}</div>
+              </div>
+              <div class="pill" style="margin:0">查看</div>
+            `;
+            row.addEventListener('click', ()=>{
+              lastTeamData = { team_id: item.team_id, team: item.team_name };
+              openPlayerModal(item, name);
+            });
+          }else{
+            row.innerHTML = `
+              <div>
+                <div class="search-result-title">${item.team || '球队'}</div>
+                <div class="search-result-meta">赛季 ${seasonText || item.season || ''} · 排名 ${item.position ?? '-'} · 积分 ${item.points ?? '-'}</div>
+              </div>
+              <div class="pill" style="margin:0">查看</div>
+            `;
+            row.addEventListener('click', ()=>{
+              const seasonValue = seasonText || item.season;
+              const seasonSelect = document.getElementById('seasonSelect');
+              if(seasonSelect && seasonValue){ seasonSelect.value = seasonValue; }
+              openTeamProfile(item.team_id, item.team, seasonValue);
+            });
+          }
+          list.appendChild(row);
+        });
+        list.style.display = 'block';
+      }
+
+      async function liveSearch(){
+        const input = document.getElementById('searchInput');
+        const statusEl = document.getElementById('searchStatus');
+        const seasonValue = document.getElementById('searchSeasonSelect')?.value;
+        if(!input || !statusEl) return;
+        const keyword = input.value.trim();
+        if(!keyword){
+          clearSearchResults();
+          statusEl.textContent = '请输入关键词后开始搜索';
+          return;
+        }
+        statusEl.textContent = '搜索中...';
+        try{
+          if(searchType === 'team'){
+            if(!seasonValue){
+              statusEl.textContent = '请选择年份以搜索球队';
+              clearSearchResults();
+              return;
+            }
+            const res = await fetch(`/api/search/team?q=${encodeURIComponent(keyword)}&season=${encodeURIComponent(seasonValue)}`);
+            const data = await res.json();
+            if(!res.ok){
+              statusEl.textContent = '搜索失败: '+(data.error||res.status);
+              clearSearchResults();
+              return;
+            }
+            lastTeamResults = data.results || [];
+            statusEl.textContent = `找到 ${lastTeamResults.length} 支球队`;
+            renderSearchResults('team', lastTeamResults, seasonValue);
+          }else{
+            const res = await fetch(`/api/search/player?q=${encodeURIComponent(keyword)}`);
+            const data = await res.json();
+            if(!res.ok){
+              statusEl.textContent = '搜索失败: '+(data.error||res.status);
+              clearSearchResults();
+              return;
+            }
+            lastPlayerResults = data.results || [];
+            statusEl.textContent = `找到 ${lastPlayerResults.length} 名球员${lastPlayerResults[0] ? `，展示 ${lastPlayerResults[0].first_name || ''} ${lastPlayerResults[0].last_name || ''}` : ''}`;
+            renderSearchResults('player', lastPlayerResults);
+          }
+        }catch(e){
+          statusEl.textContent = '网络错误: '+e;
+          clearSearchResults();
+        }
+      }
+
+      async function handleSearch(){
+        const input = document.getElementById('searchInput');
+        const statusEl = document.getElementById('searchStatus');
+        const seasonValue = document.getElementById('searchSeasonSelect')?.value;
+        if(!input || !statusEl) return;
+        const keyword = input.value.trim();
+        if(!keyword){
+          statusEl.textContent = '请输入关键词后再搜索';
+          return;
+        }
+        statusEl.textContent = '搜索中...';
+        try{
+          if(searchType === 'team'){
+            if(!seasonValue){
+              statusEl.textContent = '请选择年份后再搜索球队';
+              return;
+            }
+            const cached = lastTeamResults?.length ? lastTeamResults : null;
+            let matchList = cached;
+            if(!matchList){
+              const res = await fetch(`/api/search/team?q=${encodeURIComponent(keyword)}&season=${encodeURIComponent(seasonValue)}`);
+              const data = await res.json();
+              if(!res.ok){
+                statusEl.textContent = '搜索失败: '+(data.error||res.status);
+                return;
+              }
+              matchList = data.results || [];
+              lastTeamResults = matchList;
+            }
+            if(!matchList || matchList.length === 0){
+              statusEl.textContent = '未找到匹配球队';
+              clearSearchResults();
+              return;
+            }
+            const match = matchList[0];
+            const seasonSelect = document.getElementById('seasonSelect');
+            if(seasonSelect){ seasonSelect.value = seasonValue; }
+            openTeamProfile(match.team_id, match.team, seasonValue);
+            statusEl.textContent = `匹配到 ${match.team} · ${seasonValue} 赛季`;
+            renderSearchResults('team', matchList, seasonValue);
+          }else{
+            const cached = lastPlayerResults?.length ? lastPlayerResults : null;
+            let matchList = cached;
+            if(!matchList){
+              const res = await fetch(`/api/search/player?q=${encodeURIComponent(keyword)}`);
+              const data = await res.json();
+              if(!res.ok){
+                statusEl.textContent = '搜索失败: '+(data.error||res.status);
+                return;
+              }
+              matchList = data.results || [];
+              lastPlayerResults = matchList;
+            }
+            if(!matchList || matchList.length === 0){
+              statusEl.textContent = '未找到匹配球员';
+              clearSearchResults();
+              return;
+            }
+            const player = matchList[0];
+            lastTeamData = { team_id: player.team_id, team: player.team_name };
+            openPlayerModal(player, `${(player.first_name||'').trim()} ${(player.last_name||'').trim()}`.trim());
+            statusEl.textContent = `找到 ${matchList.length} 名球员，展示 ${player.first_name} ${player.last_name}（${player.team_name}）`;
+            renderSearchResults('player', matchList);
+          }
+        }catch(e){
+          statusEl.textContent = '网络错误: '+e;
+        }
       }
 
       // 加载所有球队列表
@@ -454,7 +670,26 @@ webui = """
       }
 
       document.getElementById('loadTeamStatsBtn').addEventListener('click', loadTeamStats);
-      document.getElementById('seasonSelect').addEventListener('change', loadTeams);
+      document.getElementById('seasonSelect').addEventListener('change', function(){
+        loadTeams();
+        syncSearchSeasonOptions();
+      });
+      document.querySelectorAll('.search-tab').forEach(btn=>{
+        btn.addEventListener('click', ()=> setSearchType(btn.dataset.type));
+      });
+      document.getElementById('searchBtn').addEventListener('click', handleSearch);
+      document.getElementById('searchInput').addEventListener('keydown', function(e){
+        if(e.key === 'Enter'){ e.preventDefault(); handleSearch(); }
+      });
+      document.getElementById('searchInput').addEventListener('input', function(){
+        if(searchDebounce){ clearTimeout(searchDebounce); }
+        searchDebounce = setTimeout(liveSearch, 200);
+      });
+      document.getElementById('searchSeasonSelect').addEventListener('change', function(){
+        if(searchType === 'team'){
+          liveSearch();
+        }
+      });
 
       function renderProMetrics(data){
         const statusEl = document.getElementById('proMetricsStatus');
@@ -865,6 +1100,7 @@ webui = """
           opt.textContent = year;
           select.appendChild(opt);
         });
+        syncSearchSeasonOptions();
       }catch(e){
         document.getElementById('standingsStatus').textContent = '网络错误: '+e;
       }
@@ -955,9 +1191,9 @@ webui = """
       });
     }
 
-    async function openTeamProfile(teamId, teamName){
+    async function openTeamProfile(teamId, teamName, seasonOverride=null){
       const token = localStorage.getItem('token');
-      const season = document.getElementById('seasonSelect').value;
+      const season = seasonOverride ?? document.getElementById('seasonSelect').value;
       lastTeamData = null;
       try{
         const params = new URLSearchParams();
@@ -1077,6 +1313,9 @@ webui = """
 
     // 初始加载：直接预取赛季与榜单（无需登录？
     window.addEventListener('load', async function(){ 
+      setSearchType('player');
+      const searchStatus = document.getElementById('searchStatus');
+      if(searchStatus){ searchStatus.textContent = '等待搜索，支持模糊匹配'; }
       const token = localStorage.getItem('token');
       if(token){
         await fetchCurrentUser();
