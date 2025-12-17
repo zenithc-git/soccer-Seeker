@@ -15,6 +15,15 @@ webui = """
       .bg-btn{padding:8px 10px;border:none;border-radius:10px;background:rgba(255,255,255,0.72);color:#0f172a;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,0.12);backdrop-filter:blur(6px);transition:transform .12s ease,box-shadow .12s ease}
       .bg-btn:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(0,0,0,0.16)}
       .bg-btn:active{transform:translateY(0)}
+      .search-panel{background:rgba(255,255,255,0.92);border:1px solid rgba(226,232,240,0.7);border-radius:14px;padding:12px 14px;box-shadow:0 10px 26px rgba(0,0,0,0.12);display:flex;flex-direction:column;gap:8px;max-width:760px;margin-bottom:12px}
+      .search-tabs{display:flex;gap:8px}
+      .search-tab{padding:8px 12px;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-weight:700;cursor:pointer;transition:all .12s ease}
+      .search-tab.active{background:#1976d2;color:#fff;border-color:#1976d2;box-shadow:0 8px 18px rgba(25,118,210,0.22)}
+      .search-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+      .search-input{padding:10px 12px;border-radius:10px;border:1px solid #cbd5e1;min-width:240px;flex:1;font-size:14px}
+      .search-select{padding:10px 12px;border-radius:10px;border:1px solid #cbd5e1;min-width:140px;background:#fff}
+      .search-hint{color:#475569;font-size:12px}
+      .search-season-wrap{display:none;align-items:center;gap:8px}
       .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#e3f2fd;color:#0d47a1;font-size:12px;font-weight:bold}
       .btn{padding:9px 14px;border:none;border-radius:8px;background:#1976d2;color:#fff;cursor:pointer;font-weight:bold;transition:transform .12s ease,box-shadow .12s ease}
       .btn.secondary{background:#6c757d}
@@ -88,6 +97,23 @@ webui = """
     </div>
 
     <div class="page">
+      <div class="search-panel">
+        <div class="search-tabs" role="group" aria-label="搜索类型">
+          <button class="search-tab active" data-type="player" id="tabPlayer">搜球员</button>
+          <button class="search-tab" data-type="team" id="tabTeam">搜球队</button>
+        </div>
+        <div class="search-controls">
+          <input id="searchInput" class="search-input" placeholder="先选择上方类型，再输入关键词" autocomplete="off">
+          <div id="searchSeasonWrap" class="search-season-wrap">
+            <select id="searchSeasonSelect" class="search-select">
+              <option value="">选择年份</option>
+            </select>
+          </div>
+          <button id="searchBtn" class="btn">搜索</button>
+        </div>
+        <div class="search-hint" id="searchHint">先选择“搜球员”或“搜球队”，按回车或搜索键执行；球队搜索需同时选择年份。</div>
+        <div class="muted" id="searchStatus"></div>
+      </div>
       <div class="top-bar">
         <div class="brand">
           <img src="/badges/Premier_League_Logo.svg.png" alt="Premier League" class="brand-logo" onerror="this.style.display='none'">

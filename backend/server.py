@@ -5,6 +5,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request
 from flask import send_from_directory
+from sqlalchemy import or_
 from web import webui
 
 from core.db import SessionLocal
@@ -190,6 +191,100 @@ def get_auth_user(return_session: bool = False):
         return user, session
     session.close()
     return user
+
+
+@app.route("/api/search/player", methods=["GET"])
+def api_search_player():
+    """Fuzzy search player by name (case-insensitive)."""
+    keyword = (request.args.get("q") or "").strip()
+    limit = request.args.get("limit", type=int) or 10
+    limit = max(1, min(limit, 50))
+    if not keyword:
+        return jsonify({"error": "missing q"}), 400
+
+    pattern = f"%{keyword}%"
+    session = SessionLocal()
+    try:
+        rows = (
+            session.query(Player, Team)
+            .join(Team, Player.team_id == Team.id)
+            .filter(
+                or_(
+                    Player.first_name.ilike(pattern),
+                    Player.last_name.ilike(pattern),
+                    (Player.first_name + " " + Player.last_name).ilike(pattern),
+                )
+            )
+            .order_by(Player.last_name.asc(), Player.first_name.asc())
+            .limit(limit)
+            .all()
+        )
+        results = []
+        for player, team in rows:
+            results.append(
+                {
+                    "id": player.id,
+                    "first_name": player.first_name,
+                    "last_name": player.last_name,
+                    "shirt_no": player.shirt_no,
+                    "birth_date": player.birth_date.isoformat() if player.birth_date else None,
+                    "position": player.position,
+                    "team_id": team.id,
+                    "team_name": team.name,
+                }
+            )
+        return jsonify({"count": len(results), "results": results})
+    finally:
+        session.close()
+
+
+@app.route("/api/search/team", methods=["GET"])
+def api_search_team():
+    """
+    Fuzzy search team by name for a specific season.
+    Query params:
+      - q: team name keyword (required)
+      - season: end year (required)
+    """
+    keyword = (request.args.get("q") or "").strip()
+    season_year = request.args.get("season", type=int)
+    limit = request.args.get("limit", type=int) or 10
+    limit = max(1, min(limit, 50))
+    if not keyword:
+        return jsonify({"error": "missing q"}), 400
+    if not season_year:
+        return jsonify({"error": "missing season"}), 400
+
+    session = SessionLocal()
+    try:
+        season = session.query(Season).filter_by(end_year=season_year).first()
+        if not season:
+            return jsonify({"error": f"season {season_year} not found"}), 404
+
+        pattern = f"%{keyword}%"
+        rows = (
+            session.query(TeamSeasonStats, Team)
+            .join(Team, TeamSeasonStats.team_id == Team.id)
+            .filter(TeamSeasonStats.season_id == season.id)
+            .filter(Team.name.ilike(pattern))
+            .order_by(Team.name.asc())
+            .limit(limit)
+            .all()
+        )
+        results = []
+        for stats_row, team in rows:
+            results.append(
+                {
+                    "team_id": team.id,
+                    "team": team.name,
+                    "season": season_year,
+                    "position": stats_row.position,
+                    "points": stats_row.points,
+                }
+            )
+        return jsonify({"season": season_year, "count": len(results), "results": results})
+    finally:
+        session.close()
 
 
 # 新增：球队历年数据API
