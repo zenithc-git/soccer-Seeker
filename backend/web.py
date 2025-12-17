@@ -79,10 +79,25 @@ webui = """
       .avatar img{width:100%;height:100%;object-fit:cover}
       .user-meta{display:flex;flex-direction:column;line-height:1.2}
       .user-meta .role{font-size:12px;color:#475569}
+      .user-actions-wrapper{position:relative;display:flex;align-items:flex-start}
+      .user-menu{position:absolute;top:62px;right:0;min-width:220px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,0.14);padding:10px;display:none;flex-direction:column;gap:8px;z-index:6}
+      .user-menu .menu-btn{width:100%;text-align:left;padding:9px 12px;border:none;border-radius:8px;background:#eef2ff;color:#0d47a1;font-weight:700;cursor:pointer}
+      .user-menu .menu-btn.secondary{background:#f1f5f9;color:#475569;font-weight:600}
+      .user-menu .menu-divider{height:1px;background:#e2e8f0;margin:4px 0}
       .brand{display:flex;align-items:center;gap:12px}
       .brand-logo{width:54px;height:54px;object-fit:contain;border-radius:12px;background:#fff;padding:6px;box-shadow:0 6px 16px rgba(0,0,0,0.08);border:1px solid #e2e8f0}
       .user-modal{max-width:520px}
       .user-modal .row label{display:block;margin-bottom:4px;color:#475569;font-size:13px}
+      .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:10px}
+      .admin-block{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;padding:12px}
+      .admin-block h4{margin:0 0 6px;font-size:15px;color:#0f172a}
+      .admin-block label{display:block;font-size:12px;color:#475569;margin-top:8px;margin-bottom:4px}
+      .admin-block input,.admin-block select{width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1}
+      .admin-list{max-height:240px;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;margin-top:8px;background:#fff}
+      .admin-item{padding:8px 10px;border-bottom:1px solid #e2e8f0;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
+      .admin-item:last-child{border-bottom:none}
+      .admin-item:hover{background:#eef2ff}
+      .pill.info{background:#e3f2fd;color:#0d47a1}
       @media(max-width:960px){
         .layout-grid{grid-template-columns:1fr}
         .user-wide{grid-column:1}
@@ -109,15 +124,24 @@ webui = """
             <p style="color:#e3f2fd;margin-bottom:6px">快速查看赛季积分榜；主榜按积分，其余按进球/丢球/净胜。</p>
           </div>
         </div>
-        <div id="userBadge" class="user-chip" title="查看账号信息">
-          <div class="avatar" id="userBadgeAvatar">G</div>
-          <div class="user-meta">
-            <span id="userBadgeName">访客</span>
-            <span class="role" id="userBadgeRole">未登录</span>
+                <div class="user-actions-wrapper">
+          <div id="userBadge" class="user-chip" title="??????">
+            <div class="avatar" id="userBadgeAvatar">G</div>
+            <div class="user-meta">
+              <span id="userBadgeName">??</span>
+              <span class="role" id="userBadgeRole">???</span>
+            </div>
+          </div>
+          <div id="userMenu" class="user-menu">
+            <button id="openChoice" class="menu-btn">????? ??/???</button>
+            <button id="userMenuInfo" class="menu-btn secondary">??????</button>
+            <div class="menu-divider"></div>
+            <button id="getAllUsersBtn" class="menu-btn secondary">??????</button>
+            <button id="getUserInfoBtn" class="menu-btn secondary">????????</button>
+            <button id="deleteAccountBtn" class="menu-btn secondary">????????</button>
+            <button id="logoutBtn" class="menu-btn secondary">????</button>
           </div>
         </div>
-      </div>
-
       <div class="layout-grid">
         <div class="column-left">
           <div class="search-panel">
@@ -196,23 +220,7 @@ webui = """
           </div>
         </div>
 
-        <div class="card user-wide">
-          <h3>账户与用户操作</h3>
-          <div style="margin:8px 0" id="authActions">
-            <button id="openChoice" class="btn">开始（选择 注册/登录 ）</button>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-            <button id="logoutBtn" class="btn secondary">退出登录</button>
-            <button id="getAllUsersBtn" class="btn">查看所有用户</button>
-            <button id="getUserInfoBtn" class="btn">获取当前用户信息</button>
-            <button id="deleteAccountBtn" class="btn secondary">删除当前用户账号</button>
-          </div>
-          <div id="userInfoDisplay" class="muted" style="margin-top:12px;white-space:pre-wrap"></div>
-        </div>
-      </div>
-    </div>
-
-        <!-- Choice modal -->
+                <!-- Choice modal -->
     <div id="choiceBackdrop" class="modal-backdrop">
       <div class="modal">
         <h2>请登录</h2>
@@ -824,7 +832,7 @@ webui = """
     function showBackdrop(id){document.getElementById(id).style.display='flex'}
     function hideBackdrop(id){document.getElementById(id).style.display='none'}
 
-    document.getElementById('openChoice').addEventListener('click', function(){ showBackdrop('choiceBackdrop') })
+    document.getElementById('openChoice').addEventListener('click', function(){ closeUserMenu(); showBackdrop('choiceBackdrop') })
     document.getElementById('choiceRegister').addEventListener('click', function(){ hideBackdrop('choiceBackdrop'); showBackdrop('registerBackdrop') })
     document.getElementById('choiceLogin').addEventListener('click', function(){ hideBackdrop('choiceBackdrop'); showBackdrop('loginBackdrop') })
 
@@ -865,29 +873,53 @@ webui = """
         }catch(e){ alert('网络错误: '+e) }
     })
 
-    // User badge + modal
-    document.getElementById('userBadge').addEventListener('click', openUserModal);
+    // Admin panel handlers
+    document.getElementById('adminCreateTeamBtn').addEventListener('click', createTeam);
+    document.getElementById('adminRenameTeamBtn').addEventListener('click', renameTeam);
+    document.getElementById('adminDeleteTeamBtn').addEventListener('click', deleteTeam);
+    document.getElementById('adminSaveStatsBtn').addEventListener('click', saveTeamStats);
+    document.getElementById('adminLoadStatsBtn').addEventListener('click', loadTeamStatsForAdmin);
+    document.getElementById('adminPlayerTeamSelect').addEventListener('change', function(e){ resetAdminPlayerForm(); loadAdminPlayers(e.target.value); });
+    document.getElementById('adminSavePlayerBtn').addEventListener('click', saveAdminPlayer);
+    document.getElementById('adminDeletePlayerBtn').addEventListener('click', deleteAdminPlayer);
+    document.getElementById('adminResetPlayerBtn').addEventListener('click', resetAdminPlayerForm);
+
+    const userMenu = document.getElementById('userMenu');
+    function closeUserMenu(){ if(userMenu){ userMenu.style.display='none'; } }
+    function toggleUserMenu(){
+      if(!userMenu) return;
+      userMenu.style.display = userMenu.style.display === 'flex' ? 'none' : 'flex';
+    }
+    document.getElementById('userBadge').addEventListener('click', function(e){
+      e.stopPropagation();
+      toggleUserMenu();
+    });
+    document.addEventListener('click', function(e){
+      if(userMenu && !e.target.closest('.user-actions-wrapper')){
+        closeUserMenu();
+      }
+    });
+    document.getElementById('userMenuInfo').addEventListener('click', function(){
+      closeUserMenu();
+      openUserModal();
+    });
     document.getElementById('userModalClose').addEventListener('click', function(){ hideBackdrop('userModal') });
     document.getElementById('userModal').addEventListener('click', function(e){ if(e.target.id === 'userModal') hideBackdrop('userModal'); });
     document.getElementById('uploadAvatarBtn').addEventListener('click', uploadAvatar);
     document.getElementById('changePwdBtn').addEventListener('click', changePassword);
 
-    // 登录/登出按钮显示控制
+    // 登录/登出按钮显示控制（菜单内）
     function syncAuthUI(){
       const token = localStorage.getItem('token');
-      const authActions = document.getElementById('authActions');
       const logoutBtn = document.getElementById('logoutBtn');
-      if(token){
-        authActions.style.display = 'none';
-        logoutBtn.style.display = '';
-      }else{
-        authActions.style.display = '';
-        logoutBtn.style.display = '';
-      }
+      if(logoutBtn){ logoutBtn.style.display = token ? '' : 'none'; }
       updateUserBadge();
     }
 
     let currentUser = null;
+    let adminTeamsCache = [];
+    let adminPlayerListCache = [];
+    let adminPlayerEditingId = null;
 
     async function fetchCurrentUser(){
       const token = localStorage.getItem('token');
@@ -913,6 +945,25 @@ webui = """
       return currentUser && (currentUser.role === 'vip_user' || currentUser.role === 'admin');
     }
 
+    function isAdmin(){
+      return currentUser && currentUser.role === 'admin';
+    }
+
+    function updateAdminPanelVisibility(){
+      const panel = document.getElementById('adminPanel');
+      const tag = document.getElementById('adminPanelTag');
+      if(!panel) return;
+      if(isAdmin()){
+        panel.style.display = '';
+        if(tag){ tag.textContent = '管理员登录'; }
+        loadAdminTeams();
+      }else{
+        panel.style.display = 'none';
+        if(tag){ tag.textContent = '需要管理员'; }
+      }
+      syncAdminButtons();
+    }
+
     function setAvatar(el, url, nameFallback='G'){
       if(!el) return;
       if(url){
@@ -924,11 +975,13 @@ webui = """
     }
 
     function updateUserBadge(){
-      const name = currentUser?.name || '访客';
-      const role = currentUser?.role || '未登录';
+      const name = currentUser?.name || '??';
+      const role = currentUser?.role || '???';
       document.getElementById('userBadgeName').textContent = name;
       document.getElementById('userBadgeRole').textContent = role;
       setAvatar(document.getElementById('userBadgeAvatar'), currentUser?.avatar_url, name);
+      closeUserMenu();
+      updateAdminPanelVisibility();
     }
 
     // 简易授权获取（带抑制重复弹窗）
@@ -948,6 +1001,478 @@ webui = """
       return token;
     }
 
+    function syncAdminButtons(){
+      const delBtn = document.getElementById('adminDeletePlayerBtn');
+      if(delBtn){ delBtn.disabled = !adminPlayerEditingId; }
+    }
+
+    function readNumberInput(id){
+      const el = document.getElementById(id);
+      if(!el) return null;
+      const val = (el.value || '').trim();
+      if(val === '') return null;
+      const num = Number(val);
+      return Number.isNaN(num) ? null : num;
+    }
+
+    function setAdminStatus(targetId, msg){
+      const el = document.getElementById(targetId);
+      if(el){ el.textContent = msg || ''; }
+    }
+
+    function resetAdminPlayerForm(){
+      adminPlayerEditingId = null;
+      ['adminPlayerFirstName','adminPlayerLastName','adminPlayerPosition','adminPlayerNumber','adminPlayerBirth'].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el){ el.value = ''; }
+      });
+      syncAdminButtons();
+      setAdminStatus('adminPlayerStatus', '已清空表单');
+    }
+
+    function renderAdminPlayerList(){
+      const listEl = document.getElementById('adminPlayerList');
+      if(!listEl) return;
+      if(!adminPlayerListCache || adminPlayerListCache.length === 0){
+        listEl.innerHTML = '<div class="muted" style="padding:8px 10px">暂无球员</div>';
+        return;
+      }
+      listEl.innerHTML = adminPlayerListCache.map(p=>{
+        const name = getPlayerFullName(p);
+        const number = (p.shirt_no || p.shirt_no === 0) ? `#${p.shirt_no} ` : '';
+        return `<div class="admin-item" data-player-id="${p.id||''}"><div>${number}${name}</div><div class="muted">${p.position || ''}</div></div>`;
+      }).join('');
+      listEl.querySelectorAll('.admin-item').forEach(item=>{
+        item.addEventListener('click', ()=> selectAdminPlayer(item.dataset.playerId));
+      });
+    }
+
+    function selectAdminPlayer(playerId){
+      const player = adminPlayerListCache.find(p=> String(p.id) === String(playerId));
+      if(!player) return;
+      adminPlayerEditingId = player.id;
+      const setVal = (id, value)=>{ const el = document.getElementById(id); if(el){ el.value = value ?? ''; } };
+      setVal('adminPlayerFirstName', player.first_name || '');
+      setVal('adminPlayerLastName', player.last_name || '');
+      setVal('adminPlayerPosition', player.position || '');
+      setVal('adminPlayerNumber', (player.shirt_no || player.shirt_no === 0) ? player.shirt_no : '');
+      setVal('adminPlayerBirth', player.birth_date || '');
+      syncAdminButtons();
+      setAdminStatus('adminPlayerStatus', `正在编辑：${getPlayerFullName(player)}`);
+    }
+
+    function fillAdminTeamSelect(list, selectEl, withPlaceholder=false){
+      if(!selectEl) return;
+      selectEl.innerHTML = '';
+      if(withPlaceholder){
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = '选择球队';
+        selectEl.appendChild(opt);
+      }
+      (list || []).forEach(t=>{
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.name;
+        selectEl.appendChild(opt);
+      });
+    }
+
+    async function loadAdminTeams(){
+      if(!isAdmin()) return;
+      const statusEl = document.getElementById('adminTeamStatus');
+      if(statusEl){ statusEl.textContent = '加载球队中...'; }
+      try{
+        const res = await fetch('/api/teams');
+        const data = await res.json();
+        if(!res.ok){
+          setAdminStatus('adminTeamStatus', '加载失败: '+(data.error||res.status));
+          return;
+        }
+        adminTeamsCache = data.teams || [];
+        fillAdminTeamSelect(adminTeamsCache, document.getElementById('adminTeamSelect'));
+        fillAdminTeamSelect(adminTeamsCache, document.getElementById('adminStatsTeamSelect'));
+        fillAdminTeamSelect(adminTeamsCache, document.getElementById('adminPlayerTeamSelect'), true);
+        setAdminStatus('adminTeamStatus', `已加载 ${adminTeamsCache.length} 支球队`);
+      }catch(e){
+        setAdminStatus('adminTeamStatus', '网络错误: '+e);
+      }
+    }
+
+    async function loadAdminPlayers(teamId){
+      adminPlayerListCache = [];
+      adminPlayerEditingId = null;
+      syncAdminButtons();
+      const listEl = document.getElementById('adminPlayerList');
+      if(!teamId){
+        if(listEl){ listEl.innerHTML = '<div class="muted" style="padding:8px 10px">请选择球队</div>'; }
+        setAdminStatus('adminPlayerStatus', '');
+        return;
+      }
+      if(!isAdmin()){
+        setAdminStatus('adminPlayerStatus', '仅管理员可操作');
+        return;
+      }
+      const token = requireAuth({ silent: true });
+      if(!token){
+        setAdminStatus('adminPlayerStatus', '请先登录管理员账号');
+        return;
+      }
+      setAdminStatus('adminPlayerStatus', '加载球员中...');
+      try{
+        const res = await fetch(`/api/admin/players?team_id=${encodeURIComponent(teamId)}`,{
+          headers:{'Authorization':`Bearer ${token}`}
+        });
+        const data = await res.json();
+        if(!res.ok){
+          setAdminStatus('adminPlayerStatus', '加载失败: '+(data.error||res.status));
+          if(listEl){ listEl.innerHTML = ''; }
+          return;
+        }
+        adminPlayerListCache = data.players || [];
+        renderAdminPlayerList();
+        setAdminStatus('adminPlayerStatus', `已加载 ${adminPlayerListCache.length} 名球员`);
+      }catch(e){
+        setAdminStatus('adminPlayerStatus', '网络错误: '+e);
+      }
+    }
+
+    async function saveAdminPlayer(){
+      if(!isAdmin()){
+        alert('仅管理员可操作');
+        return;
+      }
+      const token = requireAuth();
+      if(!token) return;
+      const teamId = document.getElementById('adminPlayerTeamSelect').value;
+      const firstName = document.getElementById('adminPlayerFirstName').value.trim();
+      const lastName = document.getElementById('adminPlayerLastName').value.trim();
+      const position = document.getElementById('adminPlayerPosition').value.trim();
+      const numberVal = document.getElementById('adminPlayerNumber').value;
+      const birth = document.getElementById('adminPlayerBirth').value.trim();
+      const shirtNo = numberVal === '' ? '' : Number(numberVal);
+      if(numberVal !== '' && Number.isNaN(shirtNo)){
+        setAdminStatus('adminPlayerStatus', '球衣号需为数字');
+        return;
+      }
+      if(!teamId){
+        setAdminStatus('adminPlayerStatus', '请选择球队');
+        return;
+      }
+      if(!firstName || !lastName){
+        setAdminStatus('adminPlayerStatus', '请填写球员名和姓');
+        return;
+      }
+      const payload = {
+        team_id: teamId,
+        first_name: firstName,
+        last_name: lastName,
+        position: position || '',
+        shirt_no: shirtNo,
+        birth_date: birth || '',
+      };
+      const isEdit = !!adminPlayerEditingId;
+      const url = isEdit ? `/api/admin/players/${adminPlayerEditingId}` : '/api/admin/players';
+      const method = isEdit ? 'PUT' : 'POST';
+      setAdminStatus('adminPlayerStatus', isEdit ? '保存修改中...' : '创建中...');
+      try{
+        const res = await fetch(url,{
+          method,
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(!res.ok){
+          setAdminStatus('adminPlayerStatus', '操作失败: '+(data.error||res.status));
+          return;
+        }
+        if(data.player){
+          adminPlayerEditingId = data.player.id;
+        }
+        syncAdminButtons();
+        setAdminStatus('adminPlayerStatus', data.msg || '已保存');
+        await loadAdminPlayers(teamId);
+      }catch(e){
+        setAdminStatus('adminPlayerStatus', '网络错误: '+e);
+      }
+    }
+
+    async function deleteAdminPlayer(){
+      if(!adminPlayerEditingId){
+        setAdminStatus('adminPlayerStatus', '请选择要删除的球员');
+        return;
+      }
+      if(!isAdmin()){
+        alert('仅管理员可操作');
+        return;
+      }
+      const token = requireAuth();
+      if(!token) return;
+      const teamId = document.getElementById('adminPlayerTeamSelect').value;
+      if(!confirm('确认删除该球员吗？')) return;
+      setAdminStatus('adminPlayerStatus', '删除中...');
+      try{
+        const res = await fetch(`/api/admin/players/${adminPlayerEditingId}`,{
+          method:'DELETE',
+          headers:{'Authorization':`Bearer ${token}`}
+        });
+        const data = await res.json();
+        if(!res.ok){
+          setAdminStatus('adminPlayerStatus', '删除失败: '+(data.error||res.status));
+          return;
+        }
+        resetAdminPlayerForm();
+        await loadAdminPlayers(teamId);
+        setAdminStatus('adminPlayerStatus', data.msg || '已删除');
+      }catch(e){
+        setAdminStatus('adminPlayerStatus', '网络错误: '+e);
+      }
+    }
+
+    async function createTeam(){
+      if(!isAdmin()){
+        alert('仅管理员可操作');
+        return;
+      }
+      const token = requireAuth();
+      if(!token) return;
+      const name = document.getElementById('adminTeamName').value.trim();
+      if(!name){
+        setAdminStatus('adminTeamStatus', '请输入球队名称');
+        return;
+      }
+      const season = readNumberInput('adminTeamSeason');
+      const position = readNumberInput('adminTeamPosition');
+      const played = readNumberInput('adminTeamPlayed');
+      const won = readNumberInput('adminTeamWon');
+      const drawn = readNumberInput('adminTeamDrawn');
+      const lost = readNumberInput('adminTeamLost');
+      const gf = readNumberInput('adminTeamGF');
+      const ga = readNumberInput('adminTeamGA');
+      const points = readNumberInput('adminTeamPoints');
+      const numbers = {season, position, played, won, drawn, lost, gf, ga, points};
+      const invalidKey = Object.entries(numbers).find(([k,v])=> v === null && document.getElementById('adminTeam'+k.charAt(0).toUpperCase()+k.slice(1))?.value.trim() !== '');
+      if(invalidKey){
+        setAdminStatus('adminTeamStatus', '数据需为数字');
+        return;
+      }
+      const statsPayload = {
+        position: position ?? undefined,
+        played: played ?? undefined,
+        won: won ?? undefined,
+        drawn: drawn ?? undefined,
+        lost: lost ?? undefined,
+        gf: gf ?? undefined,
+        ga: ga ?? undefined,
+        points: points ?? undefined,
+      };
+      setAdminStatus('adminTeamStatus', '创建中...');
+      try{
+        const res = await fetch('/api/admin/teams',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+          body: JSON.stringify({
+            name,
+            season_end_year: season || undefined,
+            stats: statsPayload,
+          })
+        });
+        const data = await res.json();
+        if(!res.ok){
+          setAdminStatus('adminTeamStatus', '创建失败: '+(data.error||res.status));
+          return;
+        }
+        document.getElementById('adminTeamName').value = '';
+        setAdminStatus('adminTeamStatus', '已创建球队：'+(data.team?.name || name));
+        await loadAdminTeams();
+        const seasonSelect = document.getElementById('seasonSelect');
+        if(seasonSelect && seasonSelect.value){ await loadTeams(); }
+      }catch(e){
+        setAdminStatus('adminTeamStatus', '网络错误: '+e);
+      }
+    }
+
+    async function renameTeam(){
+      if(!isAdmin()){
+        alert('仅管理员可操作');
+        return;
+      }
+      const token = requireAuth();
+      if(!token) return;
+      const select = document.getElementById('adminTeamSelect');
+      const newName = document.getElementById('adminRenameInput').value.trim();
+      const teamId = select?.value;
+      if(!teamId){
+        setAdminStatus('adminTeamStatus', '请选择要修改的球队');
+        return;
+      }
+      if(!newName){
+        setAdminStatus('adminTeamStatus', '请输入新名称');
+        return;
+      }
+      setAdminStatus('adminTeamStatus', '更新中...');
+      try{
+        const res = await fetch(`/api/admin/teams/${teamId}`,{
+          method:'PUT',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+          body: JSON.stringify({name:newName})
+        });
+        const data = await res.json();
+        if(!res.ok){
+          setAdminStatus('adminTeamStatus', '更新失败: '+(data.error||res.status));
+          return;
+        }
+        document.getElementById('adminRenameInput').value = '';
+        setAdminStatus('adminTeamStatus', data.msg || '已更新');
+        await loadAdminTeams();
+        const seasonSelect = document.getElementById('seasonSelect');
+        if(seasonSelect && seasonSelect.value){ await loadTeams(); }
+      }catch(e){
+        setAdminStatus('adminTeamStatus', '网络错误: '+e);
+      }
+    }
+
+    async function deleteTeam(){
+      if(!isAdmin()){
+        alert('仅管理员可操作');
+        return;
+      }
+      const token = requireAuth();
+      if(!token) return;
+      const teamId = document.getElementById('adminTeamSelect').value || document.getElementById('adminStatsTeamSelect').value;
+      if(!teamId){
+        setAdminStatus('adminTeamStatus', '请选择要删除的球队');
+        return;
+      }
+      if(!confirm('确认删除该球队及其赛季数据、球员吗？此操作不可恢复')) return;
+      setAdminStatus('adminTeamStatus', '删除中...');
+      try{
+        const res = await fetch(`/api/admin/teams/${teamId}`,{
+          method:'DELETE',
+          headers:{'Authorization':`Bearer ${token}`}
+        });
+        const data = await res.json();
+        if(!res.ok){
+          setAdminStatus('adminTeamStatus', '删除失败: '+(data.error||res.status));
+          return;
+        }
+        setAdminStatus('adminTeamStatus', data.msg || '已删除');
+        document.getElementById('adminRenameInput').value = '';
+        await loadAdminTeams();
+        resetAdminPlayerForm();
+        const seasonSelect = document.getElementById('seasonSelect');
+        if(seasonSelect && seasonSelect.value){ await loadTeams(); }
+      }catch(e){
+        setAdminStatus('adminTeamStatus', '网络错误: '+e);
+      }
+    }
+
+    async function saveTeamStats(){
+      if(!isAdmin()){
+        alert('仅管理员可操作');
+        return;
+      }
+      const token = requireAuth();
+      if(!token) return;
+      const teamId = document.getElementById('adminStatsTeamSelect').value || document.getElementById('adminTeamSelect').value;
+      if(!teamId){
+        setAdminStatus('adminTeamStatus', '请选择要更新的球队');
+        return;
+      }
+      const season = readNumberInput('adminTeamSeason');
+      if(!season){
+        setAdminStatus('adminTeamStatus', '请输入赛季末年');
+        return;
+      }
+      const position = readNumberInput('adminTeamPosition');
+      const played = readNumberInput('adminTeamPlayed');
+      const won = readNumberInput('adminTeamWon');
+      const drawn = readNumberInput('adminTeamDrawn');
+      const lost = readNumberInput('adminTeamLost');
+      const gf = readNumberInput('adminTeamGF');
+      const ga = readNumberInput('adminTeamGA');
+      const points = readNumberInput('adminTeamPoints');
+      const fields = {position, played, won, drawn, lost, gf, ga, points};
+      const invalid = Object.entries(fields).find(([k,v])=> v === null && document.getElementById('adminTeam'+k.charAt(0).toUpperCase()+k.slice(1))?.value.trim() !== '');
+      if(invalid){
+        setAdminStatus('adminTeamStatus', '数据需为数字');
+        return;
+      }
+      const statsPayload = {
+        position: position ?? undefined,
+        played: played ?? undefined,
+        won: won ?? undefined,
+        drawn: drawn ?? undefined,
+        lost: lost ?? undefined,
+        gf: gf ?? undefined,
+        ga: ga ?? undefined,
+        points: points ?? undefined,
+      };
+      setAdminStatus('adminTeamStatus', '保存赛季数据中...');
+      try{
+        const res = await fetch('/api/admin/team_stats',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+          body: JSON.stringify({
+            team_id: teamId,
+            season_end_year: season,
+            stats: statsPayload
+          })
+        });
+        const data = await res.json();
+        if(!res.ok){
+          setAdminStatus('adminTeamStatus', '保存失败: '+(data.error||res.status));
+          return;
+        }
+        setAdminStatus('adminTeamStatus', (data.msg || '已保存') + ` · 赛季 ${data.season}`);
+        await fetchStandings();
+      }catch(e){
+        setAdminStatus('adminTeamStatus', '网络错误: '+e);
+      }
+    }
+
+    async function loadTeamStatsForAdmin(){
+      if(!isAdmin()){
+        alert('仅管理员可操作');
+        return;
+      }
+      const token = requireAuth();
+      if(!token) return;
+      const teamId = document.getElementById('adminStatsTeamSelect').value || document.getElementById('adminTeamSelect').value;
+      const season = readNumberInput('adminTeamSeason');
+      if(!teamId){
+        setAdminStatus('adminTeamStatus', '请选择要读取的球队');
+        return;
+      }
+      if(!season){
+        setAdminStatus('adminTeamStatus', '请输入赛季末年');
+        return;
+      }
+      setAdminStatus('adminTeamStatus', '读取赛季数据中...');
+      try{
+        const res = await fetch(`/api/admin/team_stats?team_id=${encodeURIComponent(teamId)}&season_end_year=${encodeURIComponent(season)}`,{
+          headers:{'Authorization':`Bearer ${token}`}
+        });
+        const data = await res.json();
+        if(!res.ok){
+          setAdminStatus('adminTeamStatus', '读取失败: '+(data.error||res.status));
+          return;
+        }
+        const stats = data.stats || {};
+        const setVal = (id, val)=>{ const el = document.getElementById(id); if(el){ el.value = val ?? ''; } };
+        setVal('adminTeamPosition', stats.position);
+        setVal('adminTeamPlayed', stats.played);
+        setVal('adminTeamWon', stats.won);
+        setVal('adminTeamDrawn', stats.drawn);
+        setVal('adminTeamLost', stats.lost);
+        setVal('adminTeamGF', stats.gf);
+        setVal('adminTeamGA', stats.ga);
+        setVal('adminTeamPoints', stats.points);
+        setAdminStatus('adminTeamStatus', `已载入 ${data.team?.name || ''} · ${data.season} 赛季数据`);
+      }catch(e){
+        setAdminStatus('adminTeamStatus', '网络错误: '+e);
+      }
+    }
     async function openUserModal(){
       const token = localStorage.getItem('token');
       if(!token){
@@ -1049,6 +1574,7 @@ webui = """
 
     // 退出登录
     document.getElementById('logoutBtn').addEventListener('click', function(){
+        closeUserMenu();
         localStorage.removeItem('token');
         alert('已成功退出登录');
         window.location.reload();
