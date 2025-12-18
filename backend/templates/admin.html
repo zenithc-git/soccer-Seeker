@@ -5,29 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin 管理</title>
   <style>
-    body{font-family:Arial,Helvetica,sans-serif;background:#0b1424;color:#0f172a;margin:0;padding:0 0 32px}
-    a{color:#0d47a1;text-decoration:none}
-    header{background:#0d47a1;color:#fff;padding:16px 20px;margin-bottom:18px}
-    .page{max-width:1100px;margin:0 auto;padding:0 16px}
-    .card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 10px 26px rgba(0,0,0,0.12);border:1px solid #e2e8f0;margin-bottom:12px}
-    label{display:block;font-weight:700;margin-bottom:6px;color:#0f172a}
-    input,select{width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;margin-bottom:10px}
-    button{padding:9px 12px;border:none;border-radius:8px;background:#1976d2;color:#fff;font-weight:700;cursor:pointer}
+    body{
+      font-family:"Avenir Next","Nunito","Source Han Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+      background:
+        linear-gradient(120deg, rgba(0,198,164,0.26), rgba(124,77,255,0.26)),
+        linear-gradient(180deg, rgba(12,18,36,0.85), rgba(12,18,36,0.72)),
+        url('/wallpaper/bg005.jpg');
+      background-size:cover;
+      background-attachment:fixed;
+      background-position:center;
+      color:#0f172a;
+      margin:0;
+      padding:0 0 32px;
+    }
+    a{color:#1eb8c5;text-decoration:none}
+    header{
+      background:linear-gradient(120deg, rgba(0,198,164,0.9), rgba(88,140,255,0.9), rgba(124,77,255,0.92));
+      color:#fff;
+      padding:18px 22px;
+      margin-bottom:20px;
+      box-shadow:0 12px 28px rgba(0,0,0,0.22);
+    }
+    .page{max-width:1160px;margin:0 auto;padding:0 18px}
+    .card{
+      background:linear-gradient(145deg, rgba(255,255,255,0.98), rgba(242,248,255,0.96));
+      border-radius:16px;
+      padding:16px;
+      box-shadow:0 16px 34px rgba(0,0,0,0.16);
+      border:1px solid #e0e7ff;
+      margin-bottom:14px;
+    }
+    label{display:block;font-weight:800;margin-bottom:6px;color:#0f172a}
+    input,select{
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #cbd5e1;
+      margin-bottom:10px;
+      background:#f7fafc;
+    }
+    button{
+      padding:10px 14px;
+      border:none;
+      border-radius:12px;
+      background:linear-gradient(135deg,#00c6a7,#1f8cf3);
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+      box-shadow:0 10px 24px rgba(31,140,243,0.26);
+    }
     table{width:100%;border-collapse:collapse;font-size:13px}
-    th,td{border:1px solid #e2e8f0;padding:6px;text-align:left}
+    th,td{border:1px solid #e2e8f0;padding:8px;text-align:left}
     th{background:#f1f5f9}
     .muted{color:#475569;font-size:13px}
     .row{display:flex;gap:8px;flex-wrap:wrap}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:linear-gradient(120deg,#00c6a7,#7c4dff);color:#fff;font-weight:800;font-size:12px}
+    .section-title{display:flex;align-items:center;gap:8px;font-size:18px;margin:0 0 8px 0}
+    .section-title .dot{width:8px;height:8px;border-radius:50%;background:linear-gradient(120deg,#00c6a7,#7c4dff)}
   </style>
 </head>
 <body>
   <header>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
       <div>
-        <h2>管理员后台</h2>
+        <h2 style="margin:0">管理员后台</h2>
         <div class="muted">当前：{{ user.name }} · {{ user.role }}</div>
       </div>
-      <a href="/" style="color:#e3f2fd">返回主页</a>
+      <a href="/" style="color:#e0f7ff;font-weight:800">返回主页</a>
     </div>
   </header>
   <div class="page">
