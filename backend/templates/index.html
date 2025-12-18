@@ -10,7 +10,7 @@
     a{color:#0d47a1;text-decoration:none}
     h1,h2,h3,h4,p{margin:0}
     header{background:#0d47a1;color:#fff;padding:16px 20px;margin-bottom:18px}
-    .page{max-width:1100px;margin:0 auto;padding:0 16px}
+    .page{max-width:2000px;margin:0 auto;padding:0 16px}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
     .card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 10px 26px rgba(0,0,0,0.12);border:1px solid #e2e8f0}
     label{display:block;font-weight:700;margin-bottom:6px;color:#0f172a}
@@ -264,74 +264,8 @@
         {% if user.role == 'admin' %}
         <div class="card" style="box-shadow:none;border:1px solid #e2e8f0">
           <h4>管理员操作</h4>
-          <div class="muted">用户管理</div>
-          <div class="row">
-            <button type="button" onclick="loadUsers()">加载用户列表</button>
-            <select id="userList" style="flex:1"></select>
-            <select id="userRoleSelect">
-              <option value="user">user</option>
-              <option value="vip_user">vip_user</option>
-              <option value="admin">admin</option>
-            </select>
-            <button type="button" onclick="updateUserRole()">更新角色</button>
-            <div id="userAdminStatus" class="muted"></div>
-          </div>
-          <hr>
-          <div class="muted">新增球队</div>
-          <div class="row" style="flex-direction:column">
-            <input id="adminTeamName" placeholder="球队名称">
-            <input id="adminTeamSeason" placeholder="赛季(如2025)">
-            <button type="button" onclick="createTeam()">创建球队</button>
-            <div id="teamAdminStatus" class="muted"></div>
-          </div>
-          <hr>
-          <div class="muted">新增球员</div>
-          <div class="row" style="flex-direction:column">
-            <input id="adminPlayerFirst" placeholder="名">
-            <input id="adminPlayerLast" placeholder="姓">
-            <select id="adminPlayerTeam">
-              {% for t in teams %}
-              <option value="{{ t.id }}">{{ t.name }}</option>
-              {% endfor %}
-            </select>
-            <input id="adminPlayerPos" placeholder="位置">
-            <input id="adminPlayerNo" placeholder="球衣号">
-            <button type="button" onclick="createPlayer()">创建球员</button>
-            <div id="playerAdminStatus" class="muted"></div>
-          </div>
-          <hr>
-          <div class="muted">更新球队赛季数据</div>
-          <div class="row" style="flex-direction:column">
-            <select id="adminStatsTeam">
-              {% for t in teams %}
-              <option value="{{ t.id }}">{{ t.name }}</option>
-              {% endfor %}
-            </select>
-            <input id="adminStatsSeason" placeholder="赛季(如2025)">
-            <input id="adminStatsPlayed" placeholder="场次">
-            <input id="adminStatsWon" placeholder="胜">
-            <input id="adminStatsDrawn" placeholder="平">
-            <input id="adminStatsLost" placeholder="负">
-            <input id="adminStatsGF" placeholder="进球">
-            <input id="adminStatsGA" placeholder="失球">
-            <input id="adminStatsPoints" placeholder="积分">
-            <input id="adminStatsPosition" placeholder="排名(可选)">
-            <button type="button" onclick="updateTeamStats()">更新/新增赛季数据</button>
-            <div id="statsAdminStatus" class="muted"></div>
-          </div>
-          <hr>
-          <div class="muted">删除</div>
-          <div class="row" style="flex-direction:column">
-            <select id="adminDeleteTeam">
-              {% for t in teams %}
-              <option value="{{ t.id }}">{{ t.name }}</option>
-              {% endfor %}
-            </select>
-            <button type="button" onclick="deleteTeam()">删除球队</button>
-            <input id="adminDeletePlayerId" placeholder="球员ID">
-            <button type="button" onclick="deletePlayer()">删除球员</button>
-            <div id="deleteAdminStatus" class="muted"></div>
-          </div>
+          <p class="muted">通过后台表单操作用户、球队、球员与赛季数据。</p>
+          <a href="/admin" class="pill" style="background:#1976d2;color:#fff;display:inline-block;padding:8px 12px;border-radius:8px;text-decoration:none">进入管理页</a>
         </div>
         {% endif %}
       </div>
@@ -394,132 +328,6 @@
         status.textContent = '网络错误: '+e;
       }
       return false;
-    }
-    async function loadUsers(){
-      const status = document.getElementById('userAdminStatus');
-      status.textContent = '加载中...';
-      try{
-        const res = await fetch('/api/users');
-        const data = await res.json();
-        if(!res.ok){ status.textContent = data.error||'加载失败'; return; }
-        const sel = document.getElementById('userList');
-        sel.innerHTML = '';
-        data.users.forEach(u=>{
-          const opt = document.createElement('option');
-          opt.value = u.id;
-          opt.textContent = `${u.id} · ${u.name} · ${u.email} · ${u.role}`;
-          opt.dataset.role = u.role;
-          sel.appendChild(opt);
-        });
-        status.textContent = `共 ${data.count} 个用户`;
-      }catch(e){
-        status.textContent = '网络错误: '+e;
-      }
-    }
-    async function updateUserRole(){
-      const status = document.getElementById('userAdminStatus');
-      const sel = document.getElementById('userList');
-      const roleSel = document.getElementById('userRoleSelect');
-      const userId = sel.value;
-      const role = roleSel.value;
-      if(!userId){ status.textContent='请选择用户'; return; }
-      status.textContent = '提交中...';
-      try{
-        const res = await fetch('/api/admin/users/role',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:parseInt(userId,10),role})});
-        const data = await res.json();
-        status.textContent = res.ok ? '更新成功' : (data.error || '更新失败');
-        if(res.ok) showToast('用户角色已更新');
-      }catch(e){
-        status.textContent = '网络错误: '+e;
-      }
-    }
-    async function createTeam(){
-      const status = document.getElementById('teamAdminStatus');
-      const name = document.getElementById('adminTeamName').value.trim();
-      const season = document.getElementById('adminTeamSeason').value.trim();
-      if(!name){ status.textContent='请输入球队名'; return; }
-      status.textContent='提交中...';
-      try{
-        const payload = {name};
-        if(season) payload.season_end_year = parseInt(season,10);
-        const res = await fetch('/api/admin/teams',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-        const data = await res.json();
-        status.textContent = res.ok ? '创建成功' : (data.error||'创建失败');
-      }catch(e){
-        status.textContent='网络错误: '+e;
-      }
-    }
-    async function createPlayer(){
-      const status = document.getElementById('playerAdminStatus');
-      const first = document.getElementById('adminPlayerFirst').value.trim();
-      const last = document.getElementById('adminPlayerLast').value.trim();
-      const teamId = document.getElementById('adminPlayerTeam').value;
-      const pos = document.getElementById('adminPlayerPos').value.trim();
-      const no = document.getElementById('adminPlayerNo').value.trim();
-      if(!first || !last || !teamId){ status.textContent='请填写球员信息'; return; }
-      status.textContent='提交中...';
-      try{
-        const payload = {first_name:first,last_name:last,team_id:parseInt(teamId,10),position:pos||null,shirt_no:no||null};
-        const res = await fetch('/api/admin/players',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-        const data = await res.json();
-        status.textContent = res.ok ? '创建成功' : (data.error||'创建失败');
-      }catch(e){
-        status.textContent='网络错误: '+e;
-      }
-    }
-    async function updateTeamStats(){
-      const status = document.getElementById('statsAdminStatus');
-      const teamId = document.getElementById('adminStatsTeam').value;
-      const season = document.getElementById('adminStatsSeason').value.trim();
-      if(!teamId || !season){ status.textContent='请选择球队并填写赛季'; return; }
-      const payload = {
-        team_id: parseInt(teamId,10),
-        season_end_year: parseInt(season,10),
-        stats: {
-          played: document.getElementById('adminStatsPlayed').value,
-          won: document.getElementById('adminStatsWon').value,
-          drawn: document.getElementById('adminStatsDrawn').value,
-          lost: document.getElementById('adminStatsLost').value,
-          gf: document.getElementById('adminStatsGF').value,
-          ga: document.getElementById('adminStatsGA').value,
-          points: document.getElementById('adminStatsPoints').value,
-          position: document.getElementById('adminStatsPosition').value,
-        }
-      };
-      status.textContent='提交中...';
-      try{
-        const res = await fetch('/api/admin/team_stats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-        const data = await res.json();
-        status.textContent = res.ok ? '更新成功' : (data.error||'更新失败');
-      }catch(e){
-        status.textContent='网络错误: '+e;
-      }
-    }
-    async function deleteTeam(){
-      const status = document.getElementById('deleteAdminStatus');
-      const teamId = document.getElementById('adminDeleteTeam').value;
-      if(!teamId){ status.textContent='请选择球队'; return; }
-      status.textContent='提交中...';
-      try{
-        const res = await fetch(`/api/admin/teams/${teamId}`,{method:'DELETE'});
-        const data = await res.json();
-        status.textContent = res.ok ? '删除成功' : (data.error||'删除失败');
-      }catch(e){
-        status.textContent='网络错误: '+e;
-      }
-    }
-    async function deletePlayer(){
-      const status = document.getElementById('deleteAdminStatus');
-      const playerId = document.getElementById('adminDeletePlayerId').value.trim();
-      if(!playerId){ status.textContent='请输入球员ID'; return; }
-      status.textContent='提交中...';
-      try{
-        const res = await fetch(`/api/admin/players/${playerId}`,{method:'DELETE'});
-        const data = await res.json();
-        status.textContent = res.ok ? '删除成功' : (data.error||'删除失败');
-      }catch(e){
-        status.textContent='网络错误: '+e;
-      }
     }
     function closeTeamModal(){ document.getElementById('teamModal').style.display='none'; }
     async function openTeamModal(teamId, teamName){

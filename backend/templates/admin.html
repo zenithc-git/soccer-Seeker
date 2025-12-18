@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin 管理</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;background:#0b1424;color:#0f172a;margin:0;padding:0 0 32px}
+    a{color:#0d47a1;text-decoration:none}
+    header{background:#0d47a1;color:#fff;padding:16px 20px;margin-bottom:18px}
+    .page{max-width:1100px;margin:0 auto;padding:0 16px}
+    .card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 10px 26px rgba(0,0,0,0.12);border:1px solid #e2e8f0;margin-bottom:12px}
+    label{display:block;font-weight:700;margin-bottom:6px;color:#0f172a}
+    input,select{width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;margin-bottom:10px}
+    button{padding:9px 12px;border:none;border-radius:8px;background:#1976d2;color:#fff;font-weight:700;cursor:pointer}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border:1px solid #e2e8f0;padding:6px;text-align:left}
+    th{background:#f1f5f9}
+    .muted{color:#475569;font-size:13px}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <header>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div>
+        <h2>管理员后台</h2>
+        <div class="muted">当前：{{ user.name }} · {{ user.role }}</div>
+      </div>
+      <a href="/" style="color:#e3f2fd">返回主页</a>
+    </div>
+  </header>
+  <div class="page">
+    {% if msg %}<div class="card" style="background:#e8f5e9;border-color:#c8e6c9;color:#1b5e20">{{ msg }}</div>{% endif %}
+    {% if error %}<div class="card" style="background:#ffebee;border-color:#ffcdd2;color:#b71c1c">{{ error }}</div>{% endif %}
+
+    <div class="card">
+      <h3>用户列表 & 权限</h3>
+      <table>
+        <thead><tr><th>ID</th><th>姓名</th><th>邮箱</th><th>角色</th></tr></thead>
+        <tbody>
+          {% for u in users %}
+          <tr><td>{{ u.id }}</td><td>{{ u.name }}</td><td>{{ u.email }}</td><td>{{ u.role }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <form method="post" style="margin-top:12px">
+        <input type="hidden" name="action" value="update_role">
+        <label>用户 ID</label><input name="user_id" required>
+        <label>新角色</label>
+        <select name="role">
+          <option value="user">user</option>
+          <option value="vip_user">vip_user</option>
+          <option value="admin">admin</option>
+        </select>
+        <button type="submit">更新角色</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>新增球队</h3>
+      <form method="post">
+        <input type="hidden" name="action" value="create_team">
+        <label>球队名称</label><input name="team_name" required>
+        <label>赛季（可选，如 2025）</label><input name="team_season">
+        <button type="submit">创建</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>新增球员</h3>
+      <form method="post">
+        <input type="hidden" name="action" value="create_player">
+        <label>名</label><input name="player_first" required>
+        <label>姓</label><input name="player_last" required>
+        <label>球队</label>
+        <select name="player_team" required>
+          {% for t in teams %}
+          <option value="{{ t.id }}">{{ t.name }}</option>
+          {% endfor %}
+        </select>
+        <label>位置</label><input name="player_pos">
+        <label>球衣号</label><input name="player_no">
+        <button type="submit">创建球员</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>更新/新增 球队赛季数据</h3>
+      <form method="post">
+        <input type="hidden" name="action" value="update_stats">
+        <label>球队</label>
+        <select name="stats_team" required>
+          {% for t in teams %}
+          <option value="{{ t.id }}">{{ t.name }}</option>
+          {% endfor %}
+        </select>
+        <label>赛季 (如 2025)</label><input name="stats_season" required>
+        <div class="row">
+          <input name="stats_played" placeholder="场次">
+          <input name="stats_won" placeholder="胜">
+          <input name="stats_drawn" placeholder="平">
+          <input name="stats_lost" placeholder="负">
+        </div>
+        <div class="row">
+          <input name="stats_gf" placeholder="进球">
+          <input name="stats_ga" placeholder="失球">
+          <input name="stats_points" placeholder="积分">
+          <input name="stats_position" placeholder="排名(可选)">
+        </div>
+        <button type="submit">提交</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>删除</h3>
+      <form method="post" class="row" style="align-items:flex-end">
+        <input type="hidden" name="action" value="delete_team">
+        <div style="flex:1">
+          <label>删除球队</label>
+          <select name="delete_team">
+            {% for t in teams %}
+            <option value="{{ t.id }}">{{ t.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit">删除球队</button>
+      </form>
+      <form method="post" class="row" style="align-items:flex-end;margin-top:10px">
+        <input type="hidden" name="action" value="delete_player">
+        <div style="flex:1">
+          <label>删除球员 ID</label>
+          <input name="delete_player_id" required>
+        </div>
+        <button type="submit">删除球员</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

@@ -343,6 +343,127 @@ def logout_form():
     session.pop("user_id", None)
     return redirect(url_for("home", msg="已退出登录"))
 
+
+@app.route("/admin", methods=["GET", "POST"])
+def admin_panel():
+    user = get_auth_user()
+    if not user or user.role != "admin":
+        return redirect(url_for("home", error="需要管理员权限"))
+    db = SessionLocal()
+    msg = None
+    error = None
+    try:
+        if request.method == "POST":
+            action = request.form.get("action")
+            try:
+                if action == "update_role":
+                    uid = request.form.get("user_id", type=int)
+                    role = request.form.get("role")
+                    if not uid or role not in ("user", "vip_user", "admin"):
+                        raise ValueError("user_id 和合法角色必填")
+                    target = db.query(User).get(uid)
+                    if not target:
+                        raise ValueError("用户不存在")
+                    target.role = role
+                    db.commit()
+                    msg = "角色已更新"
+                elif action == "create_team":
+                    name = (request.form.get("team_name") or "").strip()
+                    season_year = request.form.get("team_season", type=int)
+                    if not name:
+                        raise ValueError("球队名称必填")
+                    team = Team(name=name)
+                    db.add(team)
+                    db.commit()
+                    db.refresh(team)
+                    _create_default_stats_for_latest_season(db, team.id, season_year_override=season_year)
+                    db.commit()
+                    msg = "球队已创建"
+                elif action == "create_player":
+                    first = (request.form.get("player_first") or "").strip()
+                    last = (request.form.get("player_last") or "").strip()
+                    team_id = request.form.get("player_team", type=int)
+                    pos = (request.form.get("player_pos") or "").strip() or None
+                    shirt_no = _coerce_shirt_no(request.form.get("player_no"))
+                    if not (first and last and team_id):
+                        raise ValueError("球员信息不完整")
+                    team = db.query(Team).get(team_id)
+                    if not team:
+                        raise ValueError("球队不存在")
+                    conflict = _ensure_no_player_conflicts(db, team.id, first, last, shirt_no)
+                    if conflict:
+                        raise ValueError(conflict.get("error"))
+                    player = Player(
+                        first_name=first,
+                        last_name=last,
+                        team_id=team.id,
+                        position=pos,
+                        shirt_no=shirt_no,
+                        birth_date=None,
+                    )
+                    db.add(player)
+                    db.commit()
+                    msg = "球员已创建"
+                elif action == "update_stats":
+                    team_id = request.form.get("stats_team", type=int)
+                    season_year = request.form.get("stats_season", type=int)
+                    if not team_id or not season_year:
+                        raise ValueError("球队与赛季必填")
+                    team = db.query(Team).get(team_id)
+                    if not team:
+                        raise ValueError("球队不存在")
+                    season = _get_or_create_season(db, season_year)
+                    stats = db.query(TeamSeasonStats).filter_by(team_id=team.id, season_id=season.id).first()
+                    parsed = _parse_stats_payload(db, season.id, {
+                        "played": request.form.get("stats_played"),
+                        "won": request.form.get("stats_won"),
+                        "drawn": request.form.get("stats_drawn"),
+                        "lost": request.form.get("stats_lost"),
+                        "gf": request.form.get("stats_gf"),
+                        "ga": request.form.get("stats_ga"),
+                        "points": request.form.get("stats_points"),
+                        "position": request.form.get("stats_position"),
+                    })
+                    if not stats:
+                        stats = TeamSeasonStats(team_id=team.id, season_id=season.id, **parsed)
+                        db.add(stats)
+                    else:
+                        for k, v in parsed.items():
+                            setattr(stats, k, v)
+                    db.commit()
+                    msg = "赛季数据已更新"
+                elif action == "delete_team":
+                    team_id = request.form.get("delete_team", type=int)
+                    if not team_id:
+                        raise ValueError("请选择球队")
+                    team = db.query(Team).get(team_id)
+                    if not team:
+                        raise ValueError("球队不存在")
+                    db.delete(team)
+                    db.commit()
+                    msg = "球队已删除"
+                elif action == "delete_player":
+                    pid = request.form.get("delete_player_id", type=int)
+                    if not pid:
+                        raise ValueError("请输入球员ID")
+                    player = db.query(Player).get(pid)
+                    if not player:
+                        raise ValueError("球员不存在")
+                    db.delete(player)
+                    db.commit()
+                    msg = "球员已删除"
+                else:
+                    error = "未知操作"
+            except Exception as exc:
+                db.rollback()
+                error = str(exc)
+        users = db.query(User).order_by(User.id.asc()).all()
+        teams = db.query(Team).order_by(Team.name.asc()).all()
+        seasons = [s.end_year for s in db.query(Season).order_by(Season.end_year.desc()).all()]
+        return render_template("admin.html", user=user, users=users, teams=teams, seasons=seasons, msg=msg, error=error)
+    finally:
+        db.close()
+
 @app.route("/api/search/team", methods=["GET"])
 def api_search_team():
     """
