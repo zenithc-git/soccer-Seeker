@@ -6,36 +6,82 @@
   <title>Soccer-Seeker 纯 Python 版</title>
   <style>
     *{box-sizing:border-box}
-    body{font-family:Arial,Helvetica,sans-serif;background:#0b1424;color:#0f172a;margin:0;padding:0 0 40px}
+    body{
+      font-family:"Avenir Next","Nunito","Source Han Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
+      background:#0b1424;
+      color:#0f172a;
+      margin:0;
+      padding:0 0 40px;
+      min-height:100vh;
+      background-size:cover;
+      background-position:center;
+      background-attachment:fixed;
+      transition:background-image 0.8s ease-in-out;
+    }
     a{color:#0d47a1;text-decoration:none}
     h1,h2,h3,h4,p{margin:0}
-    header{background:#0d47a1;color:#fff;padding:16px 20px;margin-bottom:18px}
+    header{
+      background:rgba(9,14,28,0.82);
+      color:#fff;
+      padding:16px 20px;
+      margin-bottom:18px;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+      backdrop-filter:blur(12px);
+      position:sticky;
+      top:0;
+      z-index:20;
+    }
     .page{max-width:2000px;margin:0 auto;padding:0 16px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
-    .card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 10px 26px rgba(0,0,0,0.12);border:1px solid #e2e8f0}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px;align-items:start}
+    .card{
+      background:rgba(255,255,255,0.9);
+      border-radius:16px;
+      padding:16px;
+      box-shadow:0 18px 38px rgba(0,0,0,0.18);
+      border:1px solid #e2e8f0;
+      backdrop-filter:blur(6px);
+    }
     label{display:block;font-weight:700;margin-bottom:6px;color:#0f172a}
-    input,select,textarea{width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;margin-bottom:10px}
-    button{padding:9px 12px;border:none;border-radius:8px;background:#1976d2;color:#fff;font-weight:700;cursor:pointer}
-    table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
-    th,td{border:1px solid #e2e8f0;padding:8px;text-align:left}
-    th{background:#f1f5f9}
+    input,select,textarea{width:100%;padding:10px 12px;border-radius:12px;border:1px solid #cbd5e1;margin-bottom:10px;background:#f8fafc}
+    button{padding:11px 14px;border:none;border-radius:12px;background:#0d47a1;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 10px 24px rgba(13,71,161,0.24)}
     .muted{color:#475569;font-size:13px}
-    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#e3f2fd;color:#0d47a1;font-weight:700;font-size:12px;margin-right:6px}
-    .player-chip{padding:6px 8px;border-radius:8px;border:1px solid #e2e8f0;margin:4px 4px 0 0;display:inline-block;background:#f8fafc}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#e3f2fd;color:#0d47a1;font-weight:700;font-size:12px;margin:4px 6px 4px 0}
+    .player-chip{padding:8px 10px;border-radius:999px;border:1px solid #d6e3f3;margin:6px 6px 0 0;display:inline-flex;align-items:center;gap:6px;background:#f5f8ff;font-weight:700;color:#0f172a;cursor:pointer;transition:transform .15s ease,box-shadow .2s ease}
+    .player-chip:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(0,0,0,0.08)}
     form{margin:0}
     .row{display:flex;gap:8px;flex-wrap:wrap}
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:9999}
-    .modal{background:#fff;border-radius:12px;max-width:720px;width:92%;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,0.18);max-height:90vh;overflow:auto}
+    .modal{background:#fff;border-radius:18px;max-width:800px;width:92%;padding:22px;box-shadow:0 22px 46px rgba(0,0,0,0.22);max-height:90vh;overflow:auto;border:1px solid #e2e8f0}
     .modal header{background:none;color:#0f172a;padding:0;margin:0 0 10px 0;display:flex;justify-content:space-between;align-items:center}
     .badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+    .standings-list{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+    .team-card{border:1px solid #d9e2f0;border-radius:16px;padding:12px;display:flex;gap:10px;align-items:flex-start;background:#fff;box-shadow:0 12px 26px rgba(0,0,0,0.08);cursor:pointer;transition:transform .15s ease,box-shadow .2s ease;width:100%}
+    .team-card:hover{transform:translateY(-2px);box-shadow:0 16px 32px rgba(0,0,0,0.12)}
+    .badge-thumb{width:56px;height:56px;border-radius:14px;object-fit:contain;background:#f8fafc;border:1px solid #e2e8f0;padding:6px}
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:8px}
+    .stat-pill{background:#f7f9fc;border:1px solid #dfe7f5;padding:10px;border-radius:12px;font-size:13px;color:#1e293b}
+    .suggest-box{margin-top:8px;border:1px solid #d9e2f0;border-radius:12px;padding:8px;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,0.08);display:none}
+    .suggest-item{padding:8px;border-radius:10px;cursor:pointer;transition:background .12s ease}
+    .suggest-item:hover{background:#f2f6ff}
+    .fullwidth-card{grid-column:1/-1}
+    .column-stack{display:flex;flex-direction:column;gap:12px}
+    .pro-box-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:12px 0}
+    .pro-box{background:#f7f9fc;border:1px solid #dfe7f5;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px}
+    .pro-box strong{font-size:15px}
+    .pro-hero{font-size:26px;font-weight:800;color:#0f172a}
+    .pro-muted{color:#6b7280;font-size:13px}
+    .pro-log{background:#0b1424;color:#e0e7ff;padding:14px;border-radius:12px;min-height:140px;white-space:pre-wrap;font-family:"JetBrains Mono","Fira Code",monospace;margin-top:10px;border:1px solid #1e293b;line-height:1.5;font-size:14px}
   </style>
 </head>
 <body>
   <header>
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-      <div>
-        <h1>Soccer-Seeker</h1>
-        <p class="muted" style="color:#e3f2fd">纯 Python + Flask 服务端渲染 · 无需前端框架</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:12px">
+        <img src="/badges/Premier_League_Logo.svg.png" alt="Premier League" style="width:46px;height:46px;object-fit:contain;border-radius:12px;background:#fff;padding:6px;border:1px solid rgba(255,255,255,0.12)">
+        <div>
+          <h1>Soccer-Seeker</h1>
+          <p class="muted" id="siteTagline" style="color:#e3f2fd"></p>
+        </div>
       </div>
       <div>
         <button id="userBtn" class="pill" style="border:none;cursor:pointer;background:#e3f2fd;color:#0d47a1">
@@ -58,6 +104,7 @@
     <div class="grid">
       <div class="card">
         <h3>积分榜</h3>
+        <div id="standingsStatus" class="muted"></div>
         <form method="get">
           <label>赛季</label>
           <select name="season">
@@ -75,131 +122,180 @@
           <button type="submit">刷新榜单</button>
         </form>
         {% if standings %}
-        <table>
-          <thead><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进</th><th>失</th><th>净</th><th>分</th></tr></thead>
-          <tbody>
+        <div class="standings-list" id="standingsList">
           {% for row in standings %}
-          <tr>
-            <td>{{ row.position }}</td>
-            <td><a class="team-link" href="javascript:void(0);" data-team-id="{{ row.team_id }}" data-team-name="{{ row.team }}" onclick="return openTeamModal('{{ row.team_id }}','{{ row.team }}');">{{ row.team }}</a></td>
-            <td>{{ row.played }}</td><td>{{ row.won }}</td><td>{{ row.drawn }}</td><td>{{ row.lost }}</td>
-            <td>{{ row.gf }}</td><td>{{ row.ga }}</td><td>{{ row.gd }}</td><td>{{ row.points }}</td>
-          </tr>
+          <div class="team-card team-link" data-team-id="{{ row.team_id }}" data-team-name="{{ row.team }}">
+            <img class="badge-thumb" src="/badges/{{ row.team_id }}.png" alt="{{ row.team }}">
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+                <div class="team-title" style="font-size:17px;font-weight:800">{{ row.team }}</div>
+                <span class="pill">积分 {{ row.points }}</span>
+              </div>
+              <div class="stat-grid">
+                <div class="stat-pill">排名 {{ row.position or '-' }}</div>
+                <div class="stat-pill">赛 {{ row.played or '-' }}</div>
+                <div class="stat-pill">胜 {{ row.won or '-' }}</div>
+                <div class="stat-pill">平 {{ row.drawn or '-' }}</div>
+                <div class="stat-pill">负 {{ row.lost or '-' }}</div>
+                <div class="stat-pill">进 {{ row.gf or '-' }}</div>
+                <div class="stat-pill">失 {{ row.ga or '-' }}</div>
+                <div class="stat-pill">净胜 {{ row.gd or '-' }}</div>
+              </div>
+            </div>
+          </div>
           {% endfor %}
-          </tbody>
-        </table>
+        </div>
         {% else %}
         <p class="muted">选择赛季后查看榜单。</p>
         {% endif %}
       </div>
 
-      <div class="card">
-        <h3>搜索</h3>
-        <form method="get">
-          <input type="hidden" name="season" value="{{ selected_season }}">
-          <input type="hidden" name="sort" value="{{ sort_type }}">
-          <label>类型</label>
-          <select name="search_type">
-            <option value="player" {% if search_type=='player' %}selected{% endif %}>球员</option>
-            <option value="team" {% if search_type=='team' %}selected{% endif %}>球队</option>
-          </select>
-          <label>关键词</label>
-          <input name="q" value="{{ keyword or '' }}" placeholder="输入球员或球队名称">
-          <label>赛季 (搜索球队时可选)</label>
-          <select name="search_season">
-            <option value="">默认当前赛季</option>
-            {% for y in seasons %}
-            <option value="{{ y }}" {% if team_season==y %}selected{% endif %}>{{ y }}</option>
-            {% endfor %}
-          </select>
-          <button type="submit">搜索</button>
-        </form>
-        {% if search_type=='team' %}
-          {% if team_results %}
-            <p class="muted">找到 {{ team_results|length }} 支球队</p>
-            <ul>
-              {% for t in team_results %}
-              <li><a class="team-link" href="javascript:void(0);" data-team-id="{{ t.id }}" data-team-name="{{ t.name }}" onclick="return openTeamModal('{{ t.id }}','{{ t.name }}');">{{ t.name }}</a></li>
+      <div class="column-stack">
+        <div class="card">
+          <h3>搜索</h3>
+          <form method="get" id="searchForm">
+            <input type="hidden" name="season" value="{{ selected_season }}">
+            <input type="hidden" name="sort" value="{{ sort_type }}">
+            <label>类型</label>
+            <select name="search_type" id="searchType">
+              <option value="player" {% if search_type=='player' %}selected{% endif %}>球员</option>
+              <option value="team" {% if search_type=='team' %}selected{% endif %}>球队</option>
+            </select>
+            <label>关键词</label>
+            <input id="keywordInput" name="q" value="{{ keyword or '' }}" placeholder="输入球员或球队名称">
+            <label>赛季 (搜索球队时可选)</label>
+            <select name="search_season" id="searchSeason">
+              <option value="">默认当前赛季</option>
+              {% for y in seasons %}
+              <option value="{{ y }}" {% if team_season==y %}selected{% endif %}>{{ y }}</option>
               {% endfor %}
-            </ul>
-          {% elif keyword %}
-            <p class="muted">未找到匹配球队</p>
+            </select>
+            <button type="submit">搜索</button>
+          </form>
+          <div id="searchSuggest" class="suggest-box"></div>
+          {% if search_type=='team' %}
+            {% if team_results %}
+              <p class="muted">找到 {{ team_results|length }} 支球队</p>
+              <ul>
+                {% for t in team_results %}
+                <li><a class="team-link" href="javascript:void(0);" data-team-id="{{ t.id }}" data-team-name="{{ t.name }}" onclick="return openTeamModal('{{ t.id }}','{{ t.name }}');">{{ t.name }}</a></li>
+                {% endfor %}
+              </ul>
+            {% elif keyword %}
+              <p class="muted">未找到匹配球队</p>
+            {% endif %}
+          {% else %}
+            {% if player_results %}
+              <p class="muted">找到 {{ player_results|length }} 名球员</p>
+              <ul>
+                {% for p,t in player_results %}
+                <li>{{ p.first_name }} {{ p.last_name }} · {{ p.position or '未知' }} · #{{ p.shirt_no or '?' }} （<a href="/?season={{ selected_season }}&sort={{ sort_type }}&team_id={{ t.id }}">{{ t.name }}</a>）</li>
+                {% endfor %}
+              </ul>
+            {% elif keyword %}
+              <p class="muted">未找到匹配球员</p>
+            {% endif %}
           {% endif %}
-        {% else %}
-          {% if player_results %}
-            <p class="muted">找到 {{ player_results|length }} 名球员</p>
-            <ul>
-              {% for p,t in player_results %}
-              <li>{{ p.first_name }} {{ p.last_name }} · {{ p.position or '未知' }} · #{{ p.shirt_no or '?' }} （<a href="/?season={{ selected_season }}&sort={{ sort_type }}&team_id={{ t.id }}">{{ t.name }}</a>）</li>
+        </div>
+        <div class="card" id="vipCard">
+          <h2 style="margin:0 0 8px 0">专业数据分析 (VIP)</h2>
+          <p class="muted">基于进/失球的预期积分 + AI 风格计算过程</p>
+          <form method="get" action="#vipCard">
+            <input type="hidden" name="season" value="{{ selected_season }}">
+            <input type="hidden" name="sort" value="{{ sort_type }}">
+            <input type="hidden" name="search_type" value="{{ search_type }}">
+            <input type="hidden" name="q" value="{{ keyword }}">
+            <label>球队</label>
+            <select name="pro_team">
+              {% for t in teams %}
+              <option value="{{ t.name }}">{{ t.name }}</option>
               {% endfor %}
-            </ul>
-          {% elif keyword %}
-            <p class="muted">未找到匹配球员</p>
+            </select>
+            <label>赛季</label>
+            <select name="pro_season">
+              {% for y in seasons %}
+              <option value="{{ y }}" {% if y==selected_season %}selected{% endif %}>{{ y }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit">计算</button>
+          </form>
+          {% if pro_metrics %}
+            <h4 style="margin-top:10px" id="proTitle">{{ pro_metrics.team }} · {{ pro_metrics.season }}</h4>
+            <div id="proSummary" style="opacity:0;pointer-events:none;transition:opacity .4s ease">
+              <div class="pro-box-grid">
+                <div class="pro-box">
+                  <strong>预期积分</strong>
+                  <div class="pro-hero" id="proExpPoints">-</div>
+                  <div class="pro-muted" id="proExpPointsPer">每场 - 分</div>
+                </div>
+                <div class="pro-box">
+                  <strong>实际积分</strong>
+                  <div class="pro-hero" id="proActualPoints">-</div>
+                  <div class="pro-muted" id="proActualPointsPer">每场 - 分</div>
+                </div>
+                <div class="pro-box">
+                  <strong>差值</strong>
+                  <div class="pro-hero" id="proDeltaPoints">-</div>
+                  <div class="pro-muted" id="proDeltaTag">-</div>
+                </div>
+              </div>
+              <div class="pro-box-grid">
+                <div class="pro-box">
+                  <strong>胜率预期</strong>
+                  <div class="pro-hero" id="proExpWinRate">-</div>
+                </div>
+                <div class="pro-box">
+                  <strong>实际胜率</strong>
+                  <div class="pro-hero" id="proActualWinRate">-</div>
+                </div>
+              </div>
+              <div class="pro-box-grid">
+                <div class="pro-box">
+                  <strong>指数 k</strong>
+                  <div class="pro-hero" id="proExponent">-</div>
+                  <div class="pro-muted">Pythagorean 指数</div>
+                </div>
+                <div class="pro-box">
+                  <strong>场次</strong>
+                  <div class="pro-hero" id="proPlayed">-</div>
+                  <div class="pro-muted">已赛场次</div>
+                </div>
+                <div class="pro-box">
+                  <strong>进球 / 失球</strong>
+                  <div class="pro-hero" id="proGfGa">-</div>
+                  <div class="pro-muted">进球 / 失球</div>
+                </div>
+              </div>
+              <div class="muted" id="proNarrative" style="margin-top:6px"></div>
+            </div>
+            <pre id="proLogTyper" class="pro-log"></pre>
+          {% else %}
+            <p class="muted">需要 VIP/管理员登录</p>
           {% endif %}
-        {% endif %}
+        </div>
       </div>
     </div>
 
     <div class="grid" style="margin-top:12px">
-      <div class="card">
-        <h3>球队详情</h3>
-        <p class="muted">从榜单或搜索中点击球队名称，弹窗展示球队详情与历史图。</p>
-      </div>
-    </div>
-
-    <div class="grid" style="margin-top:12px">
-      <div class="card" id="vipCard">
-        <h3>专业数据分析 (VIP)</h3>
-        <p class="muted">需要 VIP/管理员登录</p>
-        <form method="get" action="#vipCard">
-          <input type="hidden" name="season" value="{{ selected_season }}">
-          <input type="hidden" name="sort" value="{{ sort_type }}">
-          <input type="hidden" name="search_type" value="{{ search_type }}">
-          <input type="hidden" name="q" value="{{ keyword }}">
-          <label>球队</label>
-          <select name="pro_team">
-            {% for t in teams %}
-            <option value="{{ t.name }}">{{ t.name }}</option>
-            {% endfor %}
-          </select>
-          <label>赛季</label>
-          <select name="pro_season">
-            {% for y in seasons %}
-            <option value="{{ y }}" {% if y==selected_season %}selected{% endif %}>{{ y }}</option>
-            {% endfor %}
-          </select>
-          <button type="submit">计算</button>
-        </form>
-        {% if pro_metrics %}
-          <h4>{{ pro_metrics.team }} · {{ pro_metrics.season }}</h4>
-          <ul>
-            {% for k,v in pro_metrics.metrics.items() %}
-            <li>{{ k }}: {{ v }}</li>
-            {% endfor %}
-          </ul>
-          <div class="muted"><strong>推断：</strong>{{ pro_metrics.narrative }}</div>
-          <div class="muted" style="white-space:pre-wrap;margin-top:8px">{{ pro_metrics.log|join('\n') }}</div>
-        {% endif %}
-      </div>
-
-      <div class="card">
+      <div class="card fullwidth-card">
         <h3>登录 / 注册</h3>
         {% if user %}
           <p class="muted">当前用户：{{ user.name }} ({{ user.role }})</p>
           <form method="post" action="/logout"><button type="submit">退出登录</button></form>
         {% else %}
-          <form method="post" action="/login">
-            <label>邮箱</label><input name="email" required>
-            <label>密码</label><input name="password" type="password" required>
-            <button type="submit">登录</button>
-          </form>
-          <hr>
-          <form method="post" action="/register">
-            <label>姓名</label><input name="name" required>
-            <label>邮箱</label><input name="email" required>
-            <label>密码</label><input name="password" type="password" required>
-            <button type="submit">注册</button>
-          </form>
+          <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px">
+            <form method="post" action="/login">
+              <label>邮箱</label><input name="email" required>
+              <label>密码</label><input name="password" type="password" required>
+              <button type="submit">登录</button>
+            </form>
+            <form method="post" action="/register">
+              <label>姓名</label><input name="name" required>
+              <label>邮箱</label><input name="email" required>
+              <label>密码</label><input name="password" type="password" required>
+              <button type="submit">注册</button>
+            </form>
+          </div>
         {% endif %}
       </div>
     </div>
@@ -215,6 +311,19 @@
         <button type="button" onclick="closeTeamModal()">关闭</button>
       </header>
       <div id="teamModalBody" class="muted">加载中...</div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="playerModal">
+    <div class="modal" style="max-width:640px">
+      <header>
+        <div>
+          <h3 id="playerModalTitle">球员详情</h3>
+          <div class="badge-row" id="playerModalTags"></div>
+        </div>
+        <button type="button" onclick="closePlayerModal()">关闭</button>
+      </header>
+      <div id="playerModalBody" class="muted">加载中...</div>
     </div>
   </div>
 
@@ -275,6 +384,8 @@
 
   <script>
     const CURRENT_SEASON = {{ selected_season or 'null' }};
+    const WALLPAPERS = {{ wallpapers|tojson }};
+    let wallIdx = 0;
     function showToast(text){
       const toast = document.getElementById('toast');
       const t = document.getElementById('toastText');
@@ -295,6 +406,35 @@
     document.getElementById('userModal').addEventListener('click', function(e){
       if(e.target.id === 'userModal') closeUserModal();
     });
+    function typeWriter(el, text, speed=40, cb){
+      if(!el) return;
+      el.textContent = '';
+      let i = 0;
+      const timer = setInterval(()=>{
+        el.textContent = text.slice(0, i);
+        i++;
+        if(i > text.length){
+          clearInterval(timer);
+          if(cb) cb();
+        }
+      }, speed);
+    }
+    function applyTypewriterToElements(selector, speed=30, stagger=40){
+      const nodes = document.querySelectorAll(selector);
+      nodes.forEach((el, idx)=>{
+        const text = (el.getAttribute('data-typer-text') || el.textContent || '').trim();
+        if(!text) return;
+        setTimeout(()=>typeWriter(el, text, speed), idx * stagger);
+      });
+    }
+    function rotateWallpapers(){
+      if(!WALLPAPERS || !WALLPAPERS.length) return;
+      const body = document.body;
+      body.style.backgroundImage = `url('${WALLPAPERS[wallIdx % WALLPAPERS.length]}')`;
+      wallIdx = (wallIdx + 1) % WALLPAPERS.length;
+    }
+    rotateWallpapers();
+    setInterval(rotateWallpapers, 8000);
     async function submitPassword(evt){
       evt.preventDefault();
       const oldp = document.getElementById('oldPwd').value.trim();
@@ -356,17 +496,26 @@
         badges.innerHTML = b.join('');
         const players = data.players || [];
         const plotUrl = `/api/team_stats_plot?team_name=${encodeURIComponent(data.team)}`;
+        const summaryLine = `赛季 ${data.season || '-'} · 场次 ${data.played || '-'} · 胜 ${data.won || '-'} 平 ${data.drawn || '-'} 负 ${data.lost || '-'} · 进 ${data.gf || '-'} 失 ${data.ga || '-'} 净胜 ${data.gd || '-'}`;
         body.innerHTML = `
-          <p>赛季 ${data.season || '-'} · 场次 ${data.played || '-'} · 胜 ${data.won || '-'} 平 ${data.drawn || '-'} 负 ${data.lost || '-'}</p>
-          <p>进 ${data.gf || '-'} 失 ${data.ga || '-'} 净胜 ${data.gd || '-'}</p>
+          <div id="teamModalSummary" class="muted" style="margin-bottom:6px"></div>
           <h4>球员 (${players.length})</h4>
-          <div>${players.map(p=>`<span class="player-chip">${p.first_name} ${p.last_name} · ${p.position||'未知'} · #${(p.shirt_no ?? '?')}</span>`).join('')}</div>
-          <div style="margin-top:10px">
+          <div>${players.map(p=>`<span class="player-chip" data-player-id="${p.id}" data-player-name="${p.first_name} ${p.last_name}">${(p.shirt_no ?? '?')} ${p.first_name} ${p.last_name}</span>`).join('')}</div>
+          <div id="teamHistoryBlock" style="margin-top:10px;display:none">
             <h4>历史图</h4>
             <img src="${plotUrl}" alt="历史数据图" style="max-width:100%" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
             <div style="display:none;color:#b71c1c;margin-top:6px">需要 VIP/管理员权限查看历史图</div>
           </div>
         `;
+        const summaryEl = document.getElementById('teamModalSummary');
+        typeWriter(summaryEl, summaryLine, 36, ()=>{
+          // 等待文字打完后再显示历史图，稍微延迟以配合下方 chip 动画
+          setTimeout(()=>{
+            const hist = document.getElementById('teamHistoryBlock');
+            if(hist) hist.style.display = 'block';
+          }, 600);
+        });
+        applyTypewriterToElements('#teamModalBody .player-chip', 30, 40);
       }catch(e){
         body.textContent = '网络错误: '+e;
       }
@@ -380,17 +529,216 @@
         openTeamModal(id, name);
         return false;
       }
+      const playerChip = e.target.closest('.player-chip');
+      if(playerChip){
+        const pid = playerChip.dataset.playerId;
+        openPlayerModal(pid, playerChip.dataset.playerName || '');
+        return false;
+      }
     });
     document.getElementById('teamModal').addEventListener('click', function(e){
       if(e.target.id === 'teamModal') closeTeamModal();
     });
+    function closePlayerModal(){ document.getElementById('playerModal').style.display='none'; }
+    async function openPlayerModal(playerId, playerName){
+      const modal = document.getElementById('playerModal');
+      const title = document.getElementById('playerModalTitle');
+      const tags = document.getElementById('playerModalTags');
+      const body = document.getElementById('playerModalBody');
+      title.textContent = playerName || '球员详情';
+      tags.innerHTML = '';
+      body.textContent = '加载中...';
+      modal.style.display = 'flex';
+      try{
+        const res = await fetch(`/api/player_profile?player_id=${encodeURIComponent(playerId)}`);
+        const data = await res.json();
+        if(!res.ok){
+          body.textContent = data.error || '加载失败';
+          return;
+        }
+        tags.innerHTML = `
+          <span class="pill">号码 ${data.shirt_no ?? '?'}</span>
+          <span class="pill">${data.position || '未知位置'}</span>
+          ${data.team_name ? `<span class="pill">${data.team_name}</span>` : ''}
+        `;
+        const summaryLine = `号码 ${data.shirt_no ?? '?'} · ${data.first_name||''} ${data.last_name||''} · ${data.position || '未知位置'} · ${data.team_name || '未知球队'}`;
+        body.innerHTML = `
+          <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+            ${data.team_badge ? `<img src="${data.team_badge}" alt="${data.team_name||''}" class="badge-thumb" style="width:68px;height:68px">` : ''}
+            <div>
+              <h3 style="margin:0 0 6px 0">${data.first_name||''} ${data.last_name||''}</h3>
+              <div class="muted" id="playerModalSummary"></div>
+            </div>
+          </div>
+          <div class="stat-grid" style="margin-top:12px">
+            <div class="stat-pill">生日 ${data.birth_date || '未知'}</div>
+            <div class="stat-pill">球队 ${data.team_name || '未知'}</div>
+            <div class="stat-pill">ID ${data.id}</div>
+          </div>
+          <div style="margin-top:12px;padding:12px;border-radius:12px;border:1px dashed #cbd5e1;color:#475569"></div>
+          <div id="positionDiagramBlock" style="margin-top:12px;display:none">
+            <h4>位置示意</h4>
+            <img id="positionDiagramImg" alt="位置示意图" style="max-width:100%;border-radius:12px;border:1px solid #e2e8f0">
+          </div>
+        `;
+        const posMap = {
+          "defender":"Defender.png",
+          "forward":"Forward.png",
+          "goalkeeper":"Goalkeeper.png",
+          "midfield":"Midfield.png",
+          "midfielder":"Midfield.png"
+        };
+        const normalizedPos = (data.position || '').toLowerCase();
+        const diagram = posMap[normalizedPos] || null;
+        typeWriter(document.getElementById('playerModalSummary'), summaryLine, 36, ()=>{
+          if(diagram){
+            const block = document.getElementById('positionDiagramBlock');
+            const img = document.getElementById('positionDiagramImg');
+            if(block && img){
+              img.src = `/positions/${diagram}`;
+              block.style.display = 'block';
+            }
+          }
+        });
+        applyTypewriterToElements('#playerModal .stat-pill', 30, 40);
+      }catch(e){
+        body.textContent = '网络错误: '+e;
+      }
+    }
+    document.getElementById('playerModal').addEventListener('click', function(e){
+      if(e.target.id === 'playerModal') closePlayerModal();
+    });
+    const PRO_LOG_LINES = {{ pro_metrics.log|tojson if pro_metrics else '[]' }};
+    const PRO_FORMULA = "公式: 预期胜率 = GF^k / (GF^k + GA^k); 预期积分 = 预期胜率 × 3 × 场次";
+    const PRO_DATA = {{ pro_metrics|tojson if pro_metrics else 'null' }};
+    function renderProSummary(){
+      if(!PRO_DATA) return;
+      const m = PRO_DATA.metrics || {};
+      const summary = document.getElementById('proSummary');
+      const delta = Number(m.delta_points ?? 0);
+      const fmt = (v, digits=2)=> (v===undefined || v===null || isNaN(Number(v)))? '-' : Number(v).toFixed(digits);
+      const pct = v => (v===undefined || v===null || isNaN(Number(v)))? '-' : (Number(v)*100).toFixed(1)+'%';
+      const setText = (id, val)=>{ const el=document.getElementById(id); if(el) el.textContent = val; };
+      setText('proExpPoints', fmt(m.exp_points));
+      setText('proActualPoints', fmt(m.points));
+      setText('proDeltaPoints', fmt(delta));
+      setText('proExpPointsPer', `每场 ${fmt(m.exp_points_per_match)} 分`);
+      setText('proActualPointsPer', `每场 ${fmt(m.actual_points_per_match)} 分`);
+      setText('proExpWinRate', pct(m.exp_win_rate));
+      setText('proActualWinRate', pct(m.actual_win_rate));
+      setText('proDeltaTag', delta >=0 ? '高于预期' : '低于预期');
+      setText('proExponent', fmt(m.exponent,2));
+      setText('proPlayed', fmt(m.played,0));
+      setText('proGfGa', `${fmt(m.gf,0)} / ${fmt(m.ga,0)}`);
+      setText('proNarrative', PRO_DATA.narrative || '');
+      if(summary){
+        summary.style.opacity = 1;
+        summary.style.pointerEvents = 'auto';
+        applyTypewriterToElements('#proSummary .pro-hero, #proSummary .pro-muted', 28, 36);
+      }
+    }
     const HAS_PRO = {{ 'true' if pro_metrics else 'false' }};
     if(HAS_PRO){
       const vipCard = document.getElementById('vipCard');
       if(vipCard){
         vipCard.scrollIntoView({behavior:'smooth', block:'start'});
       }
+      const typer = document.getElementById('proLogTyper');
+      if(typer){
+        const m = PRO_DATA?.metrics || {};
+        const metricLines = [
+          `指数 k = ${m.exponent ?? '-'}（指数越大，进失球差异影响越显著）`,
+          `场次 = ${m.played ?? '-'}（用于计算每场平均表现）`,
+          `进球 GF = ${m.gf ?? '-'}（越高代表进攻产出越强）`,
+          `失球 GA = ${m.ga ?? '-'}（越低代表防守越稳健）`,
+          `预期胜率 = ${m.exp_win_rate ?? '-'}（模型基于进/失球推算的胜率）`,
+          `实际胜率 = ${m.actual_win_rate ?? '-'}（真实比赛结果转化的胜率）`,
+          `预期积分 = ${m.exp_points ?? '-'}（按预期胜率 × 3 × 场次得出）`,
+          `实际积分 = ${m.points ?? '-'}（真实累计积分）`,
+          `预期积分/场 = ${m.exp_points_per_match ?? '-'}（模型视角的场均得分）`,
+          `实际积分/场 = ${m.actual_points_per_match ?? '-'}（真实场均得分）`,
+          `差值 Δ分 = ${m.delta_points ?? '-'}（正值高于模型，负值低于模型）`,
+        ];
+        const fullText = [PRO_FORMULA, ...PRO_LOG_LINES, ...metricLines].join('\n');
+        let idx = 0;
+        typer.textContent = '';
+        const timer = setInterval(()=>{
+          typer.textContent = fullText.slice(0, idx);
+          idx++;
+          if(idx > fullText.length){
+            clearInterval(timer);
+            renderProSummary();
+          }
+        }, 55);
+      }else{
+        renderProSummary();
+      }
     }
+    // 页面初始打字：站点标语与积分榜状态
+    document.addEventListener('DOMContentLoaded', function(){
+      const tagline = document.getElementById('siteTagline');
+      if(tagline){ typeWriter(tagline, tagline.textContent, 40); }
+      const standingsStatus = document.getElementById('standingsStatus');
+      if(standingsStatus){
+        const totalTeams = {{ standings|length if standings else 0 }};
+        const sortText = {
+          "points":"按积分",
+          "goals_for":"按进球",
+          "goals_against":"按丢球",
+          "goal_diff":"按净胜球"
+        }['{{ sort_type }}'] || '默认排序';
+        const statusLine = totalTeams ? `已加载 ${totalTeams} 支球队，当前排序：${sortText}` : '选择赛季查看榜单';
+        typeWriter(standingsStatus, statusLine, 32);
+      }
+      applyTypewriterToElements('.team-card .team-title', 30, 36);
+      applyTypewriterToElements('.team-card .stat-pill', 28, 34);
+      applyTypewriterToElements('.player-chip', 30, 36);
+      applyTypewriterToElements('.pill', 30, 36);
+      applyTypewriterToElements('.pro-box strong', 30, 36);
+    });
+    const suggestBox = document.getElementById('searchSuggest');
+    const keywordInput = document.getElementById('keywordInput');
+    const searchTypeSelect = document.getElementById('searchType');
+    const searchSeason = document.getElementById('searchSeason');
+    async function doSuggest(){
+      const q = keywordInput.value.trim();
+      const type = searchTypeSelect.value;
+      if(!q){ suggestBox.style.display='none'; suggestBox.innerHTML=''; return; }
+      try{
+        if(type === 'player'){
+          const res = await fetch(`/api/search/player?q=${encodeURIComponent(q)}&limit=12`);
+          const data = await res.json();
+          if(!res.ok || !data.results){ suggestBox.style.display='none'; return; }
+          suggestBox.innerHTML = data.results.map(p=>`<div class="suggest-item" data-player-id="${p.id}" data-player-name="${p.first_name} ${p.last_name}">#${p.shirt_no ?? '?'} · ${p.first_name} ${p.last_name} · ${p.team_name}</div>`).join('');
+          suggestBox.style.display = data.results.length ? 'block' : 'none';
+        }else{
+          const seasonVal = searchSeason.value || CURRENT_SEASON || '';
+          if(!seasonVal){ suggestBox.style.display='none'; return; }
+          const res = await fetch(`/api/search/team?q=${encodeURIComponent(q)}&season=${encodeURIComponent(seasonVal)}&limit=12`);
+          const data = await res.json();
+          if(!res.ok || !data.results){ suggestBox.style.display='none'; return; }
+          suggestBox.innerHTML = data.results.map(t=>`<div class="suggest-item team-link" data-team-id="${t.team_id}" data-team-name="${t.team}">${t.team} · ${t.season}</div>`).join('');
+          suggestBox.style.display = data.results.length ? 'block' : 'none';
+        }
+      }catch(e){
+        suggestBox.style.display='none';
+      }
+    }
+    keywordInput.addEventListener('input', doSuggest);
+    searchTypeSelect.addEventListener('change', doSuggest);
+    searchSeason.addEventListener('change', doSuggest);
+    document.getElementById('searchForm').addEventListener('submit', function(){ suggestBox.style.display='none'; });
+    suggestBox.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      const playerItem = e.target.closest('.suggest-item[data-player-id]');
+      const teamItem = e.target.closest('.suggest-item.team-link');
+      if(playerItem){
+        openPlayerModal(playerItem.dataset.playerId, playerItem.dataset.playerName || '');
+      }else if(teamItem){
+        openTeamModal(teamItem.dataset.teamId, teamItem.dataset.teamName);
+      }
+    });
     {% if msg %}showToast("{{ msg }}");{% endif %}
     {% if error %}showToast("{{ error }}");{% endif %}
   </script>

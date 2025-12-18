@@ -89,6 +89,7 @@ AVATAR_DIR = BASE_DIR / "uploads" / "avatars"
 AVATAR_DIR.mkdir(parents=True, exist_ok=True)
 BADGE_DIR = (BASE_DIR.parent / "data" / "team_badge").resolve()
 WALLPAPER_DIR = (BASE_DIR.parent / "data" / "wallpaper").resolve()
+POSITION_DIAGRAM_DIR = (BASE_DIR.parent / "data" / "position_diagram").resolve()
 
 
 def get_players_for_team(session, team_id: int):
@@ -274,6 +275,32 @@ def api_search_player():
                 }
             )
         return jsonify({"count": len(results), "results": results})
+    finally:
+        session.close()
+
+
+@app.route("/api/player_profile", methods=["GET"])
+def api_player_profile():
+    """
+    Return a player's basic profile with team info.
+    Query params:
+      - player_id (required)
+    """
+    player_id = request.args.get("player_id", type=int)
+    if not player_id:
+        return jsonify({"error": "missing player_id"}), 400
+    session = SessionLocal()
+    try:
+        player = session.query(Player).get(player_id)
+        if not player:
+            return jsonify({"error": "player not found"}), 404
+        team = session.query(Team).get(player.team_id) if player.team_id else None
+        payload = serialize_player(player)
+        payload.update({
+            "team_name": team.name if team else None,
+            "team_badge": f"/badges/{team.id}.png" if team else None,
+        })
+        return jsonify(payload)
     finally:
         session.close()
 
@@ -718,7 +745,13 @@ def home():
         player_results = (
             db.query(Player, Team)
             .join(Team, Player.team_id == Team.id)
-            .filter(or_(Player.first_name.ilike(like), Player.last_name.ilike(like)))
+            .filter(
+                or_(
+                    Player.first_name.ilike(like),
+                    Player.last_name.ilike(like),
+                    (Player.first_name + " " + Player.last_name).ilike(like),
+                )
+            )
             .order_by(Player.last_name.asc(), Player.first_name.asc())
             .all()
         )
@@ -802,6 +835,11 @@ def serve_badge(filename):
 def serve_wallpaper(filename):
     """Serve background wallpapers stored under data/wallpaper."""
     return send_from_directory(WALLPAPER_DIR, filename)
+
+@app.route("/positions/<path:filename>")
+def serve_position_diagram(filename):
+    """Serve position diagrams stored under data/position_diagram."""
+    return send_from_directory(POSITION_DIAGRAM_DIR, filename)
 
 @app.route("/api/wallpapers", methods=["GET"])
 def api_wallpapers():
