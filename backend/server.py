@@ -9,6 +9,7 @@ from flask import Flask, jsonify, request, session, redirect, url_for, render_te
 from flask import send_from_directory
 from sqlalchemy import or_, func
 from sqlalchemy.exc import IntegrityError
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from core.db import SessionLocal
 from core.db.models import User, Season, Team, TeamSeasonStats, Player
@@ -218,6 +219,22 @@ def get_auth_user(return_session: bool = False):
     return user
 
 
+def verify_password(stored: str, provided: str) -> bool:
+    """
+    Backward-compatible密码验证：
+    - 如果存储的是Werkzeug hash（pbkdf2: 等），使用check_password_hash
+    - 否则回退到明文比较（兼容旧数据）
+    """
+    if not stored:
+        return False
+    try:
+        if stored.startswith("pbkdf2:") or stored.startswith("scrypt:") or stored.startswith("argon2:"):
+            return check_password_hash(stored, provided)
+    except Exception:
+        pass
+    return stored == provided
+
+
 def require_admin_session():
     """
     Ensure the requester is an admin.
@@ -336,7 +353,7 @@ def login_form():
     db = SessionLocal()
     try:
         user = db.query(User).filter_by(email=email).first()
-        if not user or user.password != password:
+        if not user or not verify_password(user.password, password):
             return redirect(url_for("home", error="账号或密码错误"))
         session["user_id"] = user.id
         return redirect(url_for("home", msg="登录成功"))
@@ -356,7 +373,7 @@ def register_form():
         existing = db.query(User).filter_by(email=email).first()
         if existing:
             return redirect(url_for("home", error="邮箱已注册"))
-        user = User(name=name, email=email, password=password, role="user")
+        user = User(name=name, email=email, password=generate_password_hash(password), role="user")
         db.add(user)
         db.commit()
         session["user_id"] = user.id
@@ -920,10 +937,10 @@ def api_update_password():
     new_password = data.get("new_password")
     if not old_password or not new_password:
         return jsonify({"error": "old_password and new_password required"}), 400
-    if user.password != old_password:
+    if not verify_password(user.password, old_password):
         return jsonify({"error": "old password mismatch"}), 403
     try:
-        user.password = new_password
+        user.password = generate_password_hash(new_password)
         session.commit()
         return jsonify({"msg": "password updated"})
     finally:
@@ -1610,7 +1627,7 @@ def api_register():
             return jsonify({"error": "email already registered"}), 409
 
         # create user
-        user = User(name=name, email=email, password=password, role=role)
+        user = User(name=name, email=email, password=generate_password_hash(password), role=role)
         if birthday:
             from datetime import datetime
             try:
@@ -1683,7 +1700,7 @@ def api_login():
     session = SessionLocal()
     try:
         user = session.query(User).filter_by(email=email).first()
-        if not user or user.password != password:
+        if not user or not verify_password(user.password, password):
             return jsonify({"error": "invalid credentials"}), 401
 
         # create token
