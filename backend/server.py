@@ -1,19 +1,21 @@
 # backend/server.py
 import secrets
 import os
+import json
 from pathlib import Path
 from datetime import datetime
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, session, redirect, url_for, render_template
 from flask import send_from_directory
 from sqlalchemy import or_, func
 from sqlalchemy.exc import IntegrityError
-from web import webui
 
 from core.db import SessionLocal
 from core.db.models import User, Season, Team, TeamSeasonStats, Player
 
-app = Flask(__name__)
+BASE_DIR = Path(__file__).resolve().parent
+app = Flask(__name__, template_folder=str(BASE_DIR / "templates"))
+app.secret_key = os.environ.get("SOCCER_SEEKER_SECRET", secrets.token_hex(16))
 
 # Matplotlib球队历年数据图片API
 import io
@@ -27,7 +29,10 @@ from flask import send_file
 @app.route('/api/team_stats_plot')
 def team_stats_plot():
     token = request.args.get('token') or request.headers.get('Authorization', '').replace('Bearer ', '')
-    user_id = TOKENS.get(token)
+    user = get_auth_user()
+    user_id = TOKENS.get(token) if token else None
+    if not user_id and user:
+        user_id = user.id
     if not user_id:
         return {'error': 'missing or invalid token'}, 401
     session = SessionLocal()
@@ -184,10 +189,19 @@ TOKENS = {}
 
 def get_auth_user(return_session: bool = False):
     """
-    Resolve current user from Authorization header.
+    Resolve current user from session or Authorization header.
     Returns None if missing/invalid.
     When return_session=True, returns (user, session) and caller must close.
     """
+    # Session-based auth (server-rendered forms)
+    if session.get("user_id"):
+        db = SessionLocal()
+        user = db.query(User).get(session["user_id"])
+        if return_session:
+            return user, db
+        db.close()
+        return user
+    # Token-based auth (API)
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
         return None
@@ -195,11 +209,11 @@ def get_auth_user(return_session: bool = False):
     user_id = TOKENS.get(token)
     if not user_id:
         return None
-    session = SessionLocal()
-    user = session.query(User).get(user_id)
+    db = SessionLocal()
+    user = db.query(User).get(user_id)
     if return_session:
-        return user, session
-    session.close()
+        return user, db
+    db.close()
     return user
 
 
@@ -263,6 +277,71 @@ def api_search_player():
     finally:
         session.close()
 
+
+@app.route("/api/admin/users/role", methods=["POST"])
+def api_admin_update_user_role():
+    """Admin: update user role (user / vip_user / admin)."""
+    admin, session, error = require_admin_session()
+    if error:
+        return error
+    data = request.json or {}
+    user_id = data.get("user_id")
+    new_role = data.get("role")
+    if not user_id or new_role not in ("user", "vip_user", "admin"):
+        session.close()
+        return jsonify({"error": "user_id and valid role required"}), 400
+    try:
+        target = session.query(User).get(user_id)
+        if not target:
+            return jsonify({"error": "user not found"}), 404
+        target.role = new_role
+        session.commit()
+        return jsonify({"msg": "role updated", "user": {"id": target.id, "name": target.name, "role": target.role}})
+    finally:
+        session.close()
+
+@app.route("/login", methods=["POST"])
+def login_form():
+    email = request.form.get("email", "").strip()
+    password = request.form.get("password", "")
+    if not email or not password:
+        return redirect(url_for("home", error="邮箱和密码必填"))
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter_by(email=email).first()
+        if not user or user.password != password:
+            return redirect(url_for("home", error="账号或密码错误"))
+        session["user_id"] = user.id
+        return redirect(url_for("home", msg="登录成功"))
+    finally:
+        db.close()
+
+
+@app.route("/register", methods=["POST"])
+def register_form():
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip()
+    password = request.form.get("password", "")
+    if not (name and email and password):
+        return redirect(url_for("home", error="姓名/邮箱/密码必填"))
+    db = SessionLocal()
+    try:
+        existing = db.query(User).filter_by(email=email).first()
+        if existing:
+            return redirect(url_for("home", error="邮箱已注册"))
+        user = User(name=name, email=email, password=password, role="user")
+        db.add(user)
+        db.commit()
+        session["user_id"] = user.id
+        return redirect(url_for("home", msg="注册并登录成功"))
+    finally:
+        db.close()
+
+
+@app.route("/logout", methods=["POST"])
+def logout_form():
+    session.pop("user_id", None)
+    return redirect(url_for("home", msg="已退出登录"))
 
 @app.route("/api/search/team", methods=["GET"])
 def api_search_team():
@@ -431,7 +510,162 @@ def api_pro_metrics():
 
 @app.route("/")
 def home():
-    return webui
+    db = SessionLocal()
+    user = get_auth_user()
+    msg = request.args.get("msg")
+    error = request.args.get("error")
+
+    # seasons and teams
+    seasons = [row[0] for row in db.query(Season.end_year).order_by(Season.end_year.desc()).all()]
+    teams = db.query(Team).order_by(Team.name.asc()).all()
+
+    # standings
+    selected_season = request.args.get("season", type=int) or (seasons[0] if seasons else None)
+    sort_type = request.args.get("sort", default="points", type=str)
+    standings = []
+    if selected_season:
+        season_obj = db.query(Season).filter_by(end_year=selected_season).first()
+        if season_obj:
+            q = (
+                db.query(TeamSeasonStats, Team)
+                .join(Team, Team.id == TeamSeasonStats.team_id)
+                .filter(TeamSeasonStats.season_id == season_obj.id)
+            )
+            if sort_type == "points":
+                q = q.order_by(TeamSeasonStats.points.desc(), TeamSeasonStats.gd.desc(), TeamSeasonStats.gf.desc(), Team.name.asc())
+            elif sort_type == "goals_for":
+                q = q.order_by(TeamSeasonStats.gf.desc(), TeamSeasonStats.points.desc(), Team.name.asc())
+            elif sort_type == "goals_against":
+                q = q.order_by(TeamSeasonStats.ga.asc(), TeamSeasonStats.points.desc(), Team.name.asc())
+            elif sort_type == "goal_diff":
+                q = q.order_by(TeamSeasonStats.gd.desc(), TeamSeasonStats.points.desc(), Team.name.asc())
+            else:
+                q = q.order_by(Team.name.asc())
+            standings = [
+                {
+                    "team_id": t.id,
+                    "team": t.name,
+                    "position": st.position,
+                    "played": st.played,
+                    "won": st.won,
+                    "drawn": st.drawn,
+                    "lost": st.lost,
+                    "gf": st.gf,
+                    "ga": st.ga,
+                    "gd": st.gd,
+                    "points": st.points,
+                }
+                for st, t in q.all()
+            ]
+
+    # unified search
+    search_type = request.args.get("search_type", default="player")
+    keyword = (request.args.get("q") or "").strip()
+    # 兼容旧参数
+    team_q = (request.args.get("team_q") or (keyword if search_type == "team" else "")).strip()
+    player_q = (request.args.get("player_q") or (keyword if search_type == "player" else "")).strip()
+    team_season = request.args.get("search_season", type=int) or request.args.get("team_season", type=int) or selected_season
+    team_results = []
+    if team_q:
+        team_results = (
+            db.query(Team)
+            .filter(Team.name.ilike(f"%{team_q}%"))
+            .order_by(Team.name.asc())
+            .all()
+        )
+
+    team_detail = None
+    team_id = request.args.get("team_id", type=int)
+    if team_id:
+        team = db.query(Team).get(team_id)
+        if team:
+            season_obj = db.query(Season).filter_by(end_year=team_season).first() if team_season else None
+            stats = None
+            if season_obj:
+                stats = (
+                    db.query(TeamSeasonStats)
+                    .filter_by(team_id=team.id, season_id=season_obj.id)
+                    .first()
+                )
+            players = get_players_for_team(db, team.id)
+            team_detail = {"team": team, "season": team_season, "stats": stats, "players": players}
+
+    # player search
+    player_results = []
+    if player_q:
+        like = f"%{player_q}%"
+        player_results = (
+            db.query(Player, Team)
+            .join(Team, Player.team_id == Team.id)
+            .filter(or_(Player.first_name.ilike(like), Player.last_name.ilike(like)))
+            .order_by(Player.last_name.asc(), Player.first_name.asc())
+            .all()
+        )
+
+    # VIP metrics (if submitted)
+    pro_metrics = None
+    if request.args.get("pro_team") and request.args.get("pro_season"):
+        pro_team = request.args.get("pro_team")
+        pro_season = request.args.get("pro_season", type=int)
+        if not user or user.role not in ("vip_user", "admin"):
+            error = "需要 VIP/管理员权限计算专业指标"
+        else:
+            team_obj = db.query(Team).filter_by(name=pro_team).first()
+            season_obj = db.query(Season).filter_by(end_year=pro_season).first()
+            if team_obj and season_obj:
+                stats_row = (
+                    db.query(TeamSeasonStats)
+                    .filter_by(team_id=team_obj.id, season_id=season_obj.id)
+                    .first()
+                )
+                if stats_row:
+                    metrics, log = calculate_pythagorean_metrics(
+                        gf=stats_row.gf, ga=stats_row.ga, played=stats_row.played, points=stats_row.points
+                    )
+                    pro_metrics = {
+                        "team": team_obj.name,
+                        "season": pro_season,
+                        "metrics": metrics,
+                        "log": log,
+                        "narrative": build_narrative(team_obj.name, pro_season, metrics),
+                    }
+                else:
+                    error = "该赛季无该球队数据"
+            else:
+                error = "球队或赛季不存在"
+
+    # wallpapers
+    wallpapers = []
+    if WALLPAPER_DIR.exists():
+        for name in os.listdir(WALLPAPER_DIR):
+            lower = name.lower()
+            if lower.endswith((".jpg", ".jpeg", ".png", ".webp")):
+                wallpapers.append(f"/wallpaper/{name}")
+    wallpapers.sort()
+
+    resp = render_template(
+        "index.html",
+        user=user,
+        seasons=seasons,
+        selected_season=selected_season,
+        sort_type=sort_type,
+        standings=standings,
+        team_q=team_q,
+        team_season=team_season,
+        team_results=team_results,
+        teams=teams,
+        search_type=search_type,
+        keyword=keyword,
+        team_detail=team_detail,
+        player_q=player_q,
+        player_results=player_results,
+        pro_metrics=pro_metrics,
+        msg=msg,
+        error=error,
+        wallpapers=wallpapers,
+    )
+    db.close()
+    return resp
 
 @app.route("/avatars/<path:filename>")
 def serve_avatar(filename):
@@ -1246,20 +1480,12 @@ def api_register():
 @app.route("/api/users", methods=["GET"])
 def api_users():
     """返回已注册用户列表（不包含密码）。可用查询参数：role（可选）"""
-    auth = request.headers.get("Authorization", "")
-    if auth.startswith("Bearer "):
-        token = auth.split(None, 1)[1]
-    else:
-        token = None
-
-    if not token or token not in TOKENS:
+    auth = get_auth_user(return_session=True)
+    if not auth:
         return jsonify({"error": "missing or invalid token"}), 401
-
-    user_id = TOKENS[token]
-    session = SessionLocal()
-
-    user = session.query(User).get(user_id)
+    user, session = auth
     if not user or user.role != "admin":
+        session.close()
         return jsonify({"error": "admin access required"}), 403
 
     role = request.args.get("role")

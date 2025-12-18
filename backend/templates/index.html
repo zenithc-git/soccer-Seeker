@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Soccer-Seeker 纯 Python 版</title>
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;background:#0b1424;color:#0f172a;margin:0;padding:0 0 40px}
+    a{color:#0d47a1;text-decoration:none}
+    h1,h2,h3,h4,p{margin:0}
+    header{background:#0d47a1;color:#fff;padding:16px 20px;margin-bottom:18px}
+    .page{max-width:1100px;margin:0 auto;padding:0 16px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
+    .card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 10px 26px rgba(0,0,0,0.12);border:1px solid #e2e8f0}
+    label{display:block;font-weight:700;margin-bottom:6px;color:#0f172a}
+    input,select,textarea{width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;margin-bottom:10px}
+    button{padding:9px 12px;border:none;border-radius:8px;background:#1976d2;color:#fff;font-weight:700;cursor:pointer}
+    table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+    th,td{border:1px solid #e2e8f0;padding:8px;text-align:left}
+    th{background:#f1f5f9}
+    .muted{color:#475569;font-size:13px}
+    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#e3f2fd;color:#0d47a1;font-weight:700;font-size:12px;margin-right:6px}
+    .player-chip{padding:6px 8px;border-radius:8px;border:1px solid #e2e8f0;margin:4px 4px 0 0;display:inline-block;background:#f8fafc}
+    form{margin:0}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:9999}
+    .modal{background:#fff;border-radius:12px;max-width:720px;width:92%;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,0.18);max-height:90vh;overflow:auto}
+    .modal header{background:none;color:#0f172a;padding:0;margin:0 0 10px 0;display:flex;justify-content:space-between;align-items:center}
+    .badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  </style>
+</head>
+<body>
+  <header>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+      <div>
+        <h1>Soccer-Seeker</h1>
+        <p class="muted" style="color:#e3f2fd">纯 Python + Flask 服务端渲染 · 无需前端框架</p>
+      </div>
+      <div>
+        <button id="userBtn" class="pill" style="border:none;cursor:pointer;background:#e3f2fd;color:#0d47a1">
+          {% if user %}已登录：{{ user.name }} · {{ user.role }}{% else %}访客模式{% endif %}
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <div id="toast" class="modal-backdrop" style="align-items:flex-start;justify-content:center;display:none">
+      <div class="modal" style="max-width:420px;margin-top:40px;background:#ffebee;border:1px solid #ffcdd2;color:#b71c1c">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <strong id="toastText"></strong>
+          <button type="button" onclick="hideToast()">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>积分榜</h3>
+        <form method="get">
+          <label>赛季</label>
+          <select name="season">
+            {% for y in seasons %}
+            <option value="{{ y }}" {% if y == selected_season %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+          <label>排序方式</label>
+          <select name="sort">
+            <option value="points" {% if sort_type=='points' %}selected{% endif %}>按积分</option>
+            <option value="goals_for" {% if sort_type=='goals_for' %}selected{% endif %}>按进球</option>
+            <option value="goals_against" {% if sort_type=='goals_against' %}selected{% endif %}>按丢球</option>
+            <option value="goal_diff" {% if sort_type=='goal_diff' %}selected{% endif %}>按净胜球</option>
+          </select>
+          <button type="submit">刷新榜单</button>
+        </form>
+        {% if standings %}
+        <table>
+          <thead><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进</th><th>失</th><th>净</th><th>分</th></tr></thead>
+          <tbody>
+          {% for row in standings %}
+          <tr>
+            <td>{{ row.position }}</td>
+            <td><a class="team-link" href="javascript:void(0);" data-team-id="{{ row.team_id }}" data-team-name="{{ row.team }}" onclick="return openTeamModal('{{ row.team_id }}','{{ row.team }}');">{{ row.team }}</a></td>
+            <td>{{ row.played }}</td><td>{{ row.won }}</td><td>{{ row.drawn }}</td><td>{{ row.lost }}</td>
+            <td>{{ row.gf }}</td><td>{{ row.ga }}</td><td>{{ row.gd }}</td><td>{{ row.points }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="muted">选择赛季后查看榜单。</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>搜索</h3>
+        <form method="get">
+          <input type="hidden" name="season" value="{{ selected_season }}">
+          <input type="hidden" name="sort" value="{{ sort_type }}">
+          <label>类型</label>
+          <select name="search_type">
+            <option value="player" {% if search_type=='player' %}selected{% endif %}>球员</option>
+            <option value="team" {% if search_type=='team' %}selected{% endif %}>球队</option>
+          </select>
+          <label>关键词</label>
+          <input name="q" value="{{ keyword or '' }}" placeholder="输入球员或球队名称">
+          <label>赛季 (搜索球队时可选)</label>
+          <select name="search_season">
+            <option value="">默认当前赛季</option>
+            {% for y in seasons %}
+            <option value="{{ y }}" {% if team_season==y %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit">搜索</button>
+        </form>
+        {% if search_type=='team' %}
+          {% if team_results %}
+            <p class="muted">找到 {{ team_results|length }} 支球队</p>
+            <ul>
+              {% for t in team_results %}
+              <li><a class="team-link" href="javascript:void(0);" data-team-id="{{ t.id }}" data-team-name="{{ t.name }}" onclick="return openTeamModal('{{ t.id }}','{{ t.name }}');">{{ t.name }}</a></li>
+              {% endfor %}
+            </ul>
+          {% elif keyword %}
+            <p class="muted">未找到匹配球队</p>
+          {% endif %}
+        {% else %}
+          {% if player_results %}
+            <p class="muted">找到 {{ player_results|length }} 名球员</p>
+            <ul>
+              {% for p,t in player_results %}
+              <li>{{ p.first_name }} {{ p.last_name }} · {{ p.position or '未知' }} · #{{ p.shirt_no or '?' }} （<a href="/?season={{ selected_season }}&sort={{ sort_type }}&team_id={{ t.id }}">{{ t.name }}</a>）</li>
+              {% endfor %}
+            </ul>
+          {% elif keyword %}
+            <p class="muted">未找到匹配球员</p>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:12px">
+      <div class="card">
+        <h3>球队详情</h3>
+        <p class="muted">从榜单或搜索中点击球队名称，弹窗展示球队详情与历史图。</p>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:12px">
+      <div class="card" id="vipCard">
+        <h3>专业数据分析 (VIP)</h3>
+        <p class="muted">需要 VIP/管理员登录</p>
+        <form method="get" action="#vipCard">
+          <input type="hidden" name="season" value="{{ selected_season }}">
+          <input type="hidden" name="sort" value="{{ sort_type }}">
+          <input type="hidden" name="search_type" value="{{ search_type }}">
+          <input type="hidden" name="q" value="{{ keyword }}">
+          <label>球队</label>
+          <select name="pro_team">
+            {% for t in teams %}
+            <option value="{{ t.name }}">{{ t.name }}</option>
+            {% endfor %}
+          </select>
+          <label>赛季</label>
+          <select name="pro_season">
+            {% for y in seasons %}
+            <option value="{{ y }}" {% if y==selected_season %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit">计算</button>
+        </form>
+        {% if pro_metrics %}
+          <h4>{{ pro_metrics.team }} · {{ pro_metrics.season }}</h4>
+          <ul>
+            {% for k,v in pro_metrics.metrics.items() %}
+            <li>{{ k }}: {{ v }}</li>
+            {% endfor %}
+          </ul>
+          <div class="muted"><strong>推断：</strong>{{ pro_metrics.narrative }}</div>
+          <div class="muted" style="white-space:pre-wrap;margin-top:8px">{{ pro_metrics.log|join('\n') }}</div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>登录 / 注册</h3>
+        {% if user %}
+          <p class="muted">当前用户：{{ user.name }} ({{ user.role }})</p>
+          <form method="post" action="/logout"><button type="submit">退出登录</button></form>
+        {% else %}
+          <form method="post" action="/login">
+            <label>邮箱</label><input name="email" required>
+            <label>密码</label><input name="password" type="password" required>
+            <button type="submit">登录</button>
+          </form>
+          <hr>
+          <form method="post" action="/register">
+            <label>姓名</label><input name="name" required>
+            <label>邮箱</label><input name="email" required>
+            <label>密码</label><input name="password" type="password" required>
+            <button type="submit">注册</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="teamModal">
+    <div class="modal">
+      <header>
+        <div>
+          <h3 id="teamModalTitle">球队详情</h3>
+          <div class="badge-row" id="teamModalBadges"></div>
+        </div>
+        <button type="button" onclick="closeTeamModal()">关闭</button>
+      </header>
+      <div id="teamModalBody" class="muted">加载中...</div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="userModal">
+    <div class="modal" style="max-width:520px">
+      <header>
+        <div>
+          <h3>账户操作</h3>
+          <div class="muted">{% if user %}当前：{{ user.name }} · {{ user.role }}{% else %}未登录{% endif %}</div>
+        </div>
+        <button type="button" onclick="closeUserModal()">关闭</button>
+      </header>
+      {% if not user %}
+      <div class="row" style="flex-direction:column">
+        <form method="post" action="/login" class="card" style="box-shadow:none;border:1px solid #e2e8f0">
+          <h4>登录</h4>
+          <label>邮箱</label><input name="email" required>
+          <label>密码</label><input name="password" type="password" required>
+          <button type="submit">登录</button>
+        </form>
+        <form method="post" action="/register" class="card" style="box-shadow:none;border:1px solid #e2e8f0">
+          <h4>注册</h4>
+          <label>姓名</label><input name="name" required>
+          <label>邮箱</label><input name="email" required>
+          <label>密码</label><input name="password" type="password" required>
+          <button type="submit">注册</button>
+        </form>
+      </div>
+      {% else %}
+      <div class="row" style="flex-direction:column;gap:10px">
+        <form class="card" style="box-shadow:none;border:1px solid #e2e8f0" onsubmit="return submitPassword(event)">
+          <h4>修改密码</h4>
+          <label>旧密码</label><input id="oldPwd" type="password" required>
+          <label>新密码</label><input id="newPwd" type="password" required>
+          <button type="submit">更新密码</button>
+          <div id="pwdStatus" class="muted"></div>
+        </form>
+        <form class="card" style="box-shadow:none;border:1px solid #e2e8f0" onsubmit="return submitAvatar(event)" enctype="multipart/form-data">
+          <h4>修改头像</h4>
+          <input id="avatarFile" type="file" accept="image/*" required>
+          <button type="submit">上传</button>
+          <div id="avatarStatus" class="muted"></div>
+        </form>
+        <form method="post" action="/logout" class="card" style="box-shadow:none;border:1px solid #e2e8f0">
+          <button type="submit">退出登录</button>
+        </form>
+        {% if user.role == 'admin' %}
+        <div class="card" style="box-shadow:none;border:1px solid #e2e8f0">
+          <h4>管理员操作</h4>
+          <div class="muted">用户管理</div>
+          <div class="row">
+            <button type="button" onclick="loadUsers()">加载用户列表</button>
+            <select id="userList" style="flex:1"></select>
+            <select id="userRoleSelect">
+              <option value="user">user</option>
+              <option value="vip_user">vip_user</option>
+              <option value="admin">admin</option>
+            </select>
+            <button type="button" onclick="updateUserRole()">更新角色</button>
+            <div id="userAdminStatus" class="muted"></div>
+          </div>
+          <hr>
+          <div class="muted">新增球队</div>
+          <div class="row" style="flex-direction:column">
+            <input id="adminTeamName" placeholder="球队名称">
+            <input id="adminTeamSeason" placeholder="赛季(如2025)">
+            <button type="button" onclick="createTeam()">创建球队</button>
+            <div id="teamAdminStatus" class="muted"></div>
+          </div>
+          <hr>
+          <div class="muted">新增球员</div>
+          <div class="row" style="flex-direction:column">
+            <input id="adminPlayerFirst" placeholder="名">
+            <input id="adminPlayerLast" placeholder="姓">
+            <select id="adminPlayerTeam">
+              {% for t in teams %}
+              <option value="{{ t.id }}">{{ t.name }}</option>
+              {% endfor %}
+            </select>
+            <input id="adminPlayerPos" placeholder="位置">
+            <input id="adminPlayerNo" placeholder="球衣号">
+            <button type="button" onclick="createPlayer()">创建球员</button>
+            <div id="playerAdminStatus" class="muted"></div>
+          </div>
+          <hr>
+          <div class="muted">更新球队赛季数据</div>
+          <div class="row" style="flex-direction:column">
+            <select id="adminStatsTeam">
+              {% for t in teams %}
+              <option value="{{ t.id }}">{{ t.name }}</option>
+              {% endfor %}
+            </select>
+            <input id="adminStatsSeason" placeholder="赛季(如2025)">
+            <input id="adminStatsPlayed" placeholder="场次">
+            <input id="adminStatsWon" placeholder="胜">
+            <input id="adminStatsDrawn" placeholder="平">
+            <input id="adminStatsLost" placeholder="负">
+            <input id="adminStatsGF" placeholder="进球">
+            <input id="adminStatsGA" placeholder="失球">
+            <input id="adminStatsPoints" placeholder="积分">
+            <input id="adminStatsPosition" placeholder="排名(可选)">
+            <button type="button" onclick="updateTeamStats()">更新/新增赛季数据</button>
+            <div id="statsAdminStatus" class="muted"></div>
+          </div>
+          <hr>
+          <div class="muted">删除</div>
+          <div class="row" style="flex-direction:column">
+            <select id="adminDeleteTeam">
+              {% for t in teams %}
+              <option value="{{ t.id }}">{{ t.name }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" onclick="deleteTeam()">删除球队</button>
+            <input id="adminDeletePlayerId" placeholder="球员ID">
+            <button type="button" onclick="deletePlayer()">删除球员</button>
+            <div id="deleteAdminStatus" class="muted"></div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <script>
+    const CURRENT_SEASON = {{ selected_season or 'null' }};
+    function showToast(text){
+      const toast = document.getElementById('toast');
+      const t = document.getElementById('toastText');
+      if(!toast || !t) return;
+      t.textContent = text || '';
+      toast.style.display = 'flex';
+    }
+    function hideToast(){
+      const toast = document.getElementById('toast');
+      if(toast){ toast.style.display='none'; }
+    }
+    function openUserModal(){ document.getElementById('userModal').style.display='flex'; }
+    function closeUserModal(){ document.getElementById('userModal').style.display='none'; }
+    document.getElementById('userBtn').addEventListener('click', function(e){
+      e.preventDefault();
+      openUserModal();
+    });
+    document.getElementById('userModal').addEventListener('click', function(e){
+      if(e.target.id === 'userModal') closeUserModal();
+    });
+    async function submitPassword(evt){
+      evt.preventDefault();
+      const oldp = document.getElementById('oldPwd').value.trim();
+      const newp = document.getElementById('newPwd').value.trim();
+      const status = document.getElementById('pwdStatus');
+      status.textContent = '提交中...';
+      try{
+        const res = await fetch('/api/me/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({old_password:oldp,new_password:newp})});
+        const data = await res.json();
+        status.textContent = res.ok ? '修改成功' : (data.error || '修改失败');
+        if(res.ok) showToast('密码已更新');
+      }catch(e){
+        status.textContent = '网络错误: '+e;
+      }
+      return false;
+    }
+    async function submitAvatar(evt){
+      evt.preventDefault();
+      const fileInput = document.getElementById('avatarFile');
+      const status = document.getElementById('avatarStatus');
+      if(!fileInput.files.length){ status.textContent='请选择文件'; return false; }
+      const form = new FormData();
+      form.append('avatar', fileInput.files[0]);
+      status.textContent = '上传中...';
+      try{
+        const res = await fetch('/api/me/avatar',{method:'POST',body:form});
+        const data = await res.json();
+        status.textContent = res.ok ? '上传成功' : (data.error || '上传失败');
+        if(res.ok) showToast('头像已更新');
+      }catch(e){
+        status.textContent = '网络错误: '+e;
+      }
+      return false;
+    }
+    async function loadUsers(){
+      const status = document.getElementById('userAdminStatus');
+      status.textContent = '加载中...';
+      try{
+        const res = await fetch('/api/users');
+        const data = await res.json();
+        if(!res.ok){ status.textContent = data.error||'加载失败'; return; }
+        const sel = document.getElementById('userList');
+        sel.innerHTML = '';
+        data.users.forEach(u=>{
+          const opt = document.createElement('option');
+          opt.value = u.id;
+          opt.textContent = `${u.id} · ${u.name} · ${u.email} · ${u.role}`;
+          opt.dataset.role = u.role;
+          sel.appendChild(opt);
+        });
+        status.textContent = `共 ${data.count} 个用户`;
+      }catch(e){
+        status.textContent = '网络错误: '+e;
+      }
+    }
+    async function updateUserRole(){
+      const status = document.getElementById('userAdminStatus');
+      const sel = document.getElementById('userList');
+      const roleSel = document.getElementById('userRoleSelect');
+      const userId = sel.value;
+      const role = roleSel.value;
+      if(!userId){ status.textContent='请选择用户'; return; }
+      status.textContent = '提交中...';
+      try{
+        const res = await fetch('/api/admin/users/role',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:parseInt(userId,10),role})});
+        const data = await res.json();
+        status.textContent = res.ok ? '更新成功' : (data.error || '更新失败');
+        if(res.ok) showToast('用户角色已更新');
+      }catch(e){
+        status.textContent = '网络错误: '+e;
+      }
+    }
+    async function createTeam(){
+      const status = document.getElementById('teamAdminStatus');
+      const name = document.getElementById('adminTeamName').value.trim();
+      const season = document.getElementById('adminTeamSeason').value.trim();
+      if(!name){ status.textContent='请输入球队名'; return; }
+      status.textContent='提交中...';
+      try{
+        const payload = {name};
+        if(season) payload.season_end_year = parseInt(season,10);
+        const res = await fetch('/api/admin/teams',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const data = await res.json();
+        status.textContent = res.ok ? '创建成功' : (data.error||'创建失败');
+      }catch(e){
+        status.textContent='网络错误: '+e;
+      }
+    }
+    async function createPlayer(){
+      const status = document.getElementById('playerAdminStatus');
+      const first = document.getElementById('adminPlayerFirst').value.trim();
+      const last = document.getElementById('adminPlayerLast').value.trim();
+      const teamId = document.getElementById('adminPlayerTeam').value;
+      const pos = document.getElementById('adminPlayerPos').value.trim();
+      const no = document.getElementById('adminPlayerNo').value.trim();
+      if(!first || !last || !teamId){ status.textContent='请填写球员信息'; return; }
+      status.textContent='提交中...';
+      try{
+        const payload = {first_name:first,last_name:last,team_id:parseInt(teamId,10),position:pos||null,shirt_no:no||null};
+        const res = await fetch('/api/admin/players',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const data = await res.json();
+        status.textContent = res.ok ? '创建成功' : (data.error||'创建失败');
+      }catch(e){
+        status.textContent='网络错误: '+e;
+      }
+    }
+    async function updateTeamStats(){
+      const status = document.getElementById('statsAdminStatus');
+      const teamId = document.getElementById('adminStatsTeam').value;
+      const season = document.getElementById('adminStatsSeason').value.trim();
+      if(!teamId || !season){ status.textContent='请选择球队并填写赛季'; return; }
+      const payload = {
+        team_id: parseInt(teamId,10),
+        season_end_year: parseInt(season,10),
+        stats: {
+          played: document.getElementById('adminStatsPlayed').value,
+          won: document.getElementById('adminStatsWon').value,
+          drawn: document.getElementById('adminStatsDrawn').value,
+          lost: document.getElementById('adminStatsLost').value,
+          gf: document.getElementById('adminStatsGF').value,
+          ga: document.getElementById('adminStatsGA').value,
+          points: document.getElementById('adminStatsPoints').value,
+          position: document.getElementById('adminStatsPosition').value,
+        }
+      };
+      status.textContent='提交中...';
+      try{
+        const res = await fetch('/api/admin/team_stats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const data = await res.json();
+        status.textContent = res.ok ? '更新成功' : (data.error||'更新失败');
+      }catch(e){
+        status.textContent='网络错误: '+e;
+      }
+    }
+    async function deleteTeam(){
+      const status = document.getElementById('deleteAdminStatus');
+      const teamId = document.getElementById('adminDeleteTeam').value;
+      if(!teamId){ status.textContent='请选择球队'; return; }
+      status.textContent='提交中...';
+      try{
+        const res = await fetch(`/api/admin/teams/${teamId}`,{method:'DELETE'});
+        const data = await res.json();
+        status.textContent = res.ok ? '删除成功' : (data.error||'删除失败');
+      }catch(e){
+        status.textContent='网络错误: '+e;
+      }
+    }
+    async function deletePlayer(){
+      const status = document.getElementById('deleteAdminStatus');
+      const playerId = document.getElementById('adminDeletePlayerId').value.trim();
+      if(!playerId){ status.textContent='请输入球员ID'; return; }
+      status.textContent='提交中...';
+      try{
+        const res = await fetch(`/api/admin/players/${playerId}`,{method:'DELETE'});
+        const data = await res.json();
+        status.textContent = res.ok ? '删除成功' : (data.error||'删除失败');
+      }catch(e){
+        status.textContent='网络错误: '+e;
+      }
+    }
+    function closeTeamModal(){ document.getElementById('teamModal').style.display='none'; }
+    async function openTeamModal(teamId, teamName){
+      const modal = document.getElementById('teamModal');
+      const title = document.getElementById('teamModalTitle');
+      const badges = document.getElementById('teamModalBadges');
+      const body = document.getElementById('teamModalBody');
+      title.textContent = teamName || '球队详情';
+      badges.innerHTML = '';
+      body.textContent = '加载中...';
+      modal.style.display = 'flex';
+      try{
+        const params = new URLSearchParams();
+        if(teamId) params.append('team_id', teamId);
+        if(CURRENT_SEASON) params.append('season', CURRENT_SEASON);
+        const res = await fetch('/api/team_profile?'+params.toString());
+        const data = await res.json();
+        if(!res.ok){
+          body.textContent = data.error || '加载失败';
+          return;
+        }
+        const b = [];
+        if(data.season) b.push(`<span class="pill">赛季 ${data.season}</span>`);
+        if(typeof data.points !== 'undefined') b.push(`<span class="pill">积分 ${data.points}</span>`);
+        if(typeof data.position !== 'undefined') b.push(`<span class="pill">排名 ${data.position}</span>`);
+        badges.innerHTML = b.join('');
+        const players = data.players || [];
+        const plotUrl = `/api/team_stats_plot?team_name=${encodeURIComponent(data.team)}`;
+        body.innerHTML = `
+          <p>赛季 ${data.season || '-'} · 场次 ${data.played || '-'} · 胜 ${data.won || '-'} 平 ${data.drawn || '-'} 负 ${data.lost || '-'}</p>
+          <p>进 ${data.gf || '-'} 失 ${data.ga || '-'} 净胜 ${data.gd || '-'}</p>
+          <h4>球员 (${players.length})</h4>
+          <div>${players.map(p=>`<span class="player-chip">${p.first_name} ${p.last_name} · ${p.position||'未知'} · #${(p.shirt_no ?? '?')}</span>`).join('')}</div>
+          <div style="margin-top:10px">
+            <h4>历史图</h4>
+            <img src="${plotUrl}" alt="历史数据图" style="max-width:100%" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+            <div style="display:none;color:#b71c1c;margin-top:6px">需要 VIP/管理员权限查看历史图</div>
+          </div>
+        `;
+      }catch(e){
+        body.textContent = '网络错误: '+e;
+      }
+    }
+    document.addEventListener('click', function(e){
+      const link = e.target.closest('.team-link');
+      if(link){
+        e.preventDefault();
+        const id = link.dataset.teamId;
+        const name = link.dataset.teamName;
+        openTeamModal(id, name);
+        return false;
+      }
+    });
+    document.getElementById('teamModal').addEventListener('click', function(e){
+      if(e.target.id === 'teamModal') closeTeamModal();
+    });
+    const HAS_PRO = {{ 'true' if pro_metrics else 'false' }};
+    if(HAS_PRO){
+      const vipCard = document.getElementById('vipCard');
+      if(vipCard){
+        vipCard.scrollIntoView({behavior:'smooth', block:'start'});
+      }
+    }
+    {% if msg %}showToast("{{ msg }}");{% endif %}
+    {% if error %}showToast("{{ error }}");{% endif %}
+  </script>
+</body>
+</html>
