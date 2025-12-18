@@ -21,7 +21,7 @@
     a{color:#0d47a1;text-decoration:none}
     h1,h2,h3,h4,p{margin:0}
     header{
-      background:rgba(9,14,28,0.82);
+      background:linear-gradient(180deg, rgba(255,129,94,0.95) 0%, rgba(255,164,116,0.9) 45%, rgba(255,199,141,0.0) 100%);
       color:#fff;
       padding:16px 20px;
       margin-bottom:18px;
@@ -34,7 +34,7 @@
     .page{max-width:2000px;margin:0 auto;padding:0 16px}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px;align-items:start}
     .card{
-      background:rgba(255,255,255,0.9);
+      background:rgba(255,255,255,0.94);
       border-radius:16px;
       padding:16px;
       box-shadow:0 18px 38px rgba(0,0,0,0.18);
@@ -43,10 +43,10 @@
     }
     label{display:block;font-weight:700;margin-bottom:6px;color:#0f172a}
     input,select,textarea{width:100%;padding:10px 12px;border-radius:12px;border:1px solid #cbd5e1;margin-bottom:10px;background:#f8fafc}
-    button{padding:11px 14px;border:none;border-radius:12px;background:#0d47a1;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 10px 24px rgba(13,71,161,0.24)}
+    button{padding:11px 14px;border:none;border-radius:12px;background:linear-gradient(135deg,#ff7a99,#ff9f68);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 10px 24px rgba(255,122,153,0.26)}
     .muted{color:#475569;font-size:13px}
-    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#e3f2fd;color:#0d47a1;font-weight:700;font-size:12px;margin:4px 6px 4px 0}
-    .player-chip{padding:8px 10px;border-radius:999px;border:1px solid #d6e3f3;margin:6px 6px 0 0;display:inline-flex;align-items:center;gap:6px;background:#f5f8ff;font-weight:700;color:#0f172a;cursor:pointer;transition:transform .15s ease,box-shadow .2s ease}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:linear-gradient(135deg,#ffd194,#ff9a9e);color:#5f2a1f;font-weight:800;font-size:12px;margin:4px 6px 4px 0}
+    .player-chip{padding:8px 10px;border-radius:999px;border:1px solid #ffd5e6;margin:6px 6px 0 0;display:inline-flex;align-items:center;gap:6px;background:#fff4f9;font-weight:800;color:#5a284c;cursor:pointer;transition:transform .15s ease,box-shadow .2s ease}
     .player-chip:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(0,0,0,0.08)}
     form{margin:0}
     .row{display:flex;gap:8px;flex-wrap:wrap}
@@ -55,11 +55,11 @@
     .modal header{background:none;color:#0f172a;padding:0;margin:0 0 10px 0;display:flex;justify-content:space-between;align-items:center}
     .badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
     .standings-list{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
-    .team-card{border:1px solid #d9e2f0;border-radius:16px;padding:12px;display:flex;gap:10px;align-items:flex-start;background:#fff;box-shadow:0 12px 26px rgba(0,0,0,0.08);cursor:pointer;transition:transform .15s ease,box-shadow .2s ease;width:100%}
+    .team-card{border:1px solid #d9e2f0;border-radius:16px;padding:12px;display:flex;gap:10px;align-items:flex-start;background:linear-gradient(145deg,#fff,#f8fbff);box-shadow:0 12px 26px rgba(0,0,0,0.08);cursor:pointer;transition:transform .15s ease,box-shadow .2s ease;width:100%}
     .team-card:hover{transform:translateY(-2px);box-shadow:0 16px 32px rgba(0,0,0,0.12)}
     .badge-thumb{width:56px;height:56px;border-radius:14px;object-fit:contain;background:#f8fafc;border:1px solid #e2e8f0;padding:6px}
     .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:8px}
-    .stat-pill{background:#f7f9fc;border:1px solid #dfe7f5;padding:10px;border-radius:12px;font-size:13px;color:#1e293b}
+    .stat-pill{background:#fff3e6;border:1px solid #ffd9b3;padding:10px;border-radius:12px;font-size:13px;color:#7a3e13}
     .suggest-box{margin-top:8px;border:1px solid #d9e2f0;border-radius:12px;padding:8px;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,0.08);display:none}
     .suggest-item{padding:8px;border-radius:10px;cursor:pointer;transition:background .12s ease}
     .suggest-item:hover{background:#f2f6ff}
@@ -79,7 +79,7 @@
       <div style="display:flex;align-items:center;gap:12px">
         <img src="/badges/Premier_League_Logo.svg.png" alt="Premier League" style="width:46px;height:46px;object-fit:contain;border-radius:12px;background:#fff;padding:6px;border:1px solid rgba(255,255,255,0.12)">
         <div>
-          <h1>Soccer-Seeker</h1>
+          <h1 style="background:linear-gradient(90deg,#00c6a7,#1f8cf3);-webkit-background-clip:text;color:transparent">Soccer-Seeker</h1>
           <p class="muted" id="siteTagline" style="color:#e3f2fd"></p>
         </div>
       </div>
@@ -503,7 +503,7 @@
           <div>${players.map(p=>`<span class="player-chip" data-player-id="${p.id}" data-player-name="${p.first_name} ${p.last_name}">${(p.shirt_no ?? '?')} ${p.first_name} ${p.last_name}</span>`).join('')}</div>
           <div id="teamHistoryBlock" style="margin-top:10px;display:none">
             <h4>历史图</h4>
-            <img src="${plotUrl}" alt="历史数据图" style="max-width:100%" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+            <img src="${plotUrl}" alt="历史数据图" style="max-width:100%;border-radius:14px;border:1px solid #e2e8f0" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
             <div style="display:none;color:#b71c1c;margin-top:6px">需要 VIP/管理员权限查看历史图</div>
           </div>
         `;
@@ -578,7 +578,7 @@
           <div style="margin-top:12px;padding:12px;border-radius:12px;border:1px dashed #cbd5e1;color:#475569"></div>
           <div id="positionDiagramBlock" style="margin-top:12px;display:none">
             <h4>位置示意</h4>
-            <img id="positionDiagramImg" alt="位置示意图" style="max-width:100%;border-radius:12px;border:1px solid #e2e8f0">
+            <img id="positionDiagramImg" alt="位置示意图" style="max-width:100%;border-radius:14px;border:1px solid #e2e8f0">
           </div>
         `;
         const posMap = {
